@@ -1,0 +1,14 @@
+{
+  "id": "benadictinfanta/gv-yolo26-training",
+  "title": "GV-YOLO26 Training",
+  "code_file": "Kaggle_Train_GV_YOLO26.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "dataset_sources": ["elangovan001/speed12"],
+  "competition_sources": [],
+  "kernel_sources": []
+}

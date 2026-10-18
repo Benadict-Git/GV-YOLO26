@@ -1,0 +1,1295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>GV-YOLO26 & SBP-YOLO Road Hazard Detection HUD</title>
+  <meta name="theme-color" content="#0a0e17">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #080c14;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --neon-cyan: #00f2fe;
+      --neon-green: #10b981;
+      --neon-orange: #ff8a00;
+      --neon-red: #ef4444;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: #f8fafc;
+      font-family: 'Inter', -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      padding-bottom: 24px;
+    }
+
+    /* Top Navigation HUD */
+    header {
+      background: rgba(13, 19, 33, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .logo-badge {
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      color: #050b14;
+      font-family: 'Chakra Petch', sans-serif;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+
+    .brand-title {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      color: #f1f5f9;
+    }
+
+    .hud-status-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-family: 'Chakra Petch', sans-serif;
+      background: rgba(16, 185, 129, 0.12);
+      color: var(--neon-green);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      background: currentColor;
+      border-radius: 50%;
+      animation: pulse-dot 1.5s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* Model Selection Deck */
+    .model-bar {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding: 10px 14px 4px 14px;
+      background: rgba(10, 15, 26, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    .model-pill {
+      background: rgba(18, 25, 42, 0.85);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .model-pill.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 242, 254, 0.1);
+      box-shadow: 0 0 14px rgba(0, 242, 254, 0.18);
+    }
+
+    .model-pill#btnModelSBP.active {
+      border-color: var(--neon-green);
+      background: rgba(16, 185, 129, 0.1);
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.18);
+    }
+
+    .model-pill#btnModelGVOpt.active {
+      border-color: #f59e0b;
+      background: rgba(245, 158, 11, 0.12);
+      box-shadow: 0 0 14px rgba(245, 158, 11, 0.22);
+    }
+
+    .model-pill-tag {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+    }
+
+    .model-pill.active .model-pill-tag {
+      color: var(--neon-cyan);
+    }
+
+    .model-pill#btnModelSBP.active .model-pill-tag {
+      color: var(--neon-green);
+    }
+
+    .model-pill-name {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: 0.3px;
+    }
+
+    .model-pill-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: 'Chakra Petch', monospace;
+    }
+
+    .model-info-strip {
+      padding: 6px 14px 6px 14px;
+      font-size: 10.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      background: rgba(10, 15, 26, 0.6);
+    }
+
+    /* Sensitivity and Temporal Toolbar */
+    .sensitivity-toolbar {
+      padding: 8px 14px;
+      background: rgba(13, 19, 33, 0.85);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sensitivity-group {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .toolbar-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Chakra Petch', sans-serif;
+      margin-right: 2px;
+    }
+
+    .chip-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-family: 'Chakra Petch', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .chip-btn.active {
+      background: rgba(0, 242, 254, 0.16);
+      border-color: var(--neon-cyan);
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 0 8px rgba(0, 242, 254, 0.25);
+    }
+
+    /* Mode Navigation Tabs */
+    .nav-tabs {
+      display: flex;
+      background: rgba(15, 23, 42, 0.6);
+      padding: 6px 12px;
+      gap: 8px;
+      border-bottom: 1px solid var(--card-border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 4px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+    }
+
+    /* Alert Banner */
+    .hud-alert-banner {
+      margin: 10px 14px 6px 14px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'Chakra Petch', sans-serif;
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--neon-green);
+      transition: all 0.25s ease;
+    }
+
+    .hud-alert-banner.alert-danger {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(239, 68, 68, 0.6);
+      color: #fca5a5;
+      animation: alert-flash 0.9s infinite alternate;
+    }
+
+    .hud-alert-banner.alert-warning {
+      background: rgba(255, 138, 0, 0.18);
+      border-color: rgba(255, 138, 0, 0.5);
+      color: #fed7aa;
+    }
+
+    @keyframes alert-flash {
+      from { box-shadow: 0 0 4px rgba(239, 68, 68, 0.2); }
+      to { box-shadow: 0 0 16px rgba(239, 68, 68, 0.6); }
+    }
+
+    .alert-text-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .alert-icon {
+      font-size: 18px;
+    }
+
+    .alert-title {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: 0.5px;
+    }
+
+    .alert-subtext {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'Inter', sans-serif;
+    }
+
+    /* Camera & Canvas Viewport */
+    .viewport-card {
+      margin: 6px 14px 10px 14px;
+      background: #000000;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 1 / 1;
+      max-height: 440px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .viewport-card.dragover {
+      border-color: var(--neon-cyan);
+      box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+    }
+
+    #cameraVideo {
+      display: none;
+    }
+
+    #videoPlayer {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    #displayCanvas {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+    /* Dropzone inside viewport */
+    .upload-dropzone {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(10, 15, 26, 0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 24px;
+      z-index: 20;
+    }
+
+    .hud-crosshair {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .hud-crosshair::before, .hud-crosshair::after {
+      content: '';
+      position: absolute;
+      background: rgba(0, 242, 254, 0.4);
+    }
+    .hud-crosshair::before { top: 50%; left: 2px; right: 2px; height: 1px; }
+    .hud-crosshair::after { left: 50%; top: 2px; bottom: 2px; width: 1px; }
+
+    .hud-overlay-strip {
+      position: absolute;
+      bottom: 8px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Chakra Petch', monospace;
+      font-size: 11px;
+      color: rgba(255, 255, 255, 0.7);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 4px 8px;
+      border-radius: 6px;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    /* Action Deck Controls */
+    .control-deck {
+      padding: 0 14px 12px 14px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .action-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      color: #f1f5f9;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      font-family: 'Chakra Petch', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .action-btn:active {
+      transform: scale(0.97);
+    }
+
+    .action-btn.primary {
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      color: #050b14;
+      border: none;
+      box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
+    }
+
+    .action-btn.danger {
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+    }
+
+    .action-btn.accent {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: var(--neon-green);
+    }
+
+    .video-control-row {
+      display: flex;
+      gap: 10px;
+      grid-column: 1 / -1;
+    }
+
+    /* Telemetry Grid */
+    .telemetry-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 0 14px 12px 14px;
+    }
+
+    .telemetry-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px;
+      text-align: center;
+    }
+
+    .telemetry-label {
+      font-size: 10.5px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+      font-family: 'Chakra Petch', sans-serif;
+    }
+
+    .telemetry-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: 'Chakra Petch', monospace;
+      color: #ffffff;
+    }
+
+    /* Presets and Benchmarks */
+    .section-title {
+      margin: 10px 14px 8px 14px;
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 12.5px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .clips-scroll {
+      display: flex;
+      gap: 10px;
+      padding: 0 14px 10px 14px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .clips-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .clip-card {
+      flex: 0 0 145px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .clip-card.active {
+      border-color: var(--neon-cyan);
+      background: rgba(0, 242, 254, 0.08);
+    }
+
+    .clip-name {
+      font-family: 'Chakra Petch', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 4px;
+    }
+
+    .clip-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.3;
+    }
+
+    .audio-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    #snapshotInput, #videoFileInput {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header Navigation -->
+  <header>
+    <div class="brand">
+      <span class="logo-badge" id="brandBadge">GV-YOLO26</span>
+      <span class="brand-title">ROAD HAZARD HUD</span>
+    </div>
+    <div class="hud-status-badge" id="systemStatus">
+      <span class="dot"></span>
+      <span id="statusText">ONLINE</span>
+    </div>
+  </header>
+
+  <!-- Model Switcher Bar -->
+  <div class="model-bar">
+    <div class="model-pill active" id="btnModelGV" onclick="selectModel('gv-yolo26')">
+      <div class="model-pill-tag">⚡ PROPOSED (82.8%)</div>
+      <div class="model-pill-name">GV-YOLO26</div>
+      <div class="model-pill-sub">2.08M P • Backbone Mod</div>
+    </div>
+    <div class="model-pill" id="btnModelGVOpt" onclick="selectModel('gv-yolo26-opt')">
+      <div class="model-pill-tag" style="color: #f59e0b;">⭐ GHOST-OPT (84.1%)</div>
+      <div class="model-pill-name">GV-YOLO26-Opt</div>
+      <div class="model-pill-sub">2.08M P • Ghost+P2 Head</div>
+    </div>
+    <div class="model-pill" id="btnModelSBP" onclick="selectModel('sbp-yolo')">
+      <div class="model-pill-tag">🏆 BENCHMARK</div>
+      <div class="model-pill-name">SBP-YOLO</div>
+      <div class="model-pill-sub">2.62M P • 86.9% mAP</div>
+    </div>
+  </div>
+
+  <!-- Active Model Specs Badge -->
+  <div class="model-info-strip" id="modelInfoStrip">
+    <span id="modelInfoText">⚡ YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params • 82.8% mAP)</span>
+    <span style="font-family: 'Chakra Petch'; color: var(--neon-cyan); cursor: pointer;" onclick="resetTrackerState()">[Reset ID]</span>
+  </div>
+
+  <!-- Sensitivity & Temporal Filter Toolbar -->
+  <div class="sensitivity-toolbar">
+    <div class="sensitivity-group">
+      <span class="toolbar-label">🎯 Threshold:</span>
+      <button class="chip-btn" id="sensNight" onclick="setSensitivity(0.12, this)">0.12 (Night)</button>
+      <button class="chip-btn active" id="sensHigh" onclick="setSensitivity(0.15, this)">0.15 (Responsive)</button>
+      <button class="chip-btn" id="sensMed" onclick="setSensitivity(0.25, this)">0.25 (Balanced)</button>
+      <button class="chip-btn" id="sensLow" onclick="setSensitivity(0.35, this)">0.35 (Strict)</button>
+    </div>
+    <div class="sensitivity-group">
+      <span class="toolbar-label">⏱️ Temporal:</span>
+      <button class="chip-btn active" id="filterFast" onclick="setFilterFrames(1, this)">1-Frame (Fast)</button>
+      <button class="chip-btn" id="filterStable" onclick="setFilterFrames(2, this)">2-Frames (Stable)</button>
+    </div>
+  </div>
+
+  <!-- Mode Selector Tabs -->
+  <nav class="nav-tabs">
+    <div class="tab-btn active" id="tabCamera" onclick="switchMode('camera')">
+      📹 Live Camera
+    </div>
+    <div class="tab-btn" id="tabDemo" onclick="switchMode('demo')">
+      🎬 Benchmark Clips
+    </div>
+    <div class="tab-btn" id="tabUpload" onclick="switchMode('upload')">
+      📁 Upload Media
+    </div>
+  </nav>
+
+  <!-- Warning Banner -->
+  <div class="hud-alert-banner" id="alertBanner">
+    <div class="alert-text-group">
+      <div class="alert-icon" id="alertIcon">🟢</div>
+      <div>
+        <div class="alert-title" id="alertTitle">ROAD CLEAR</div>
+        <div class="alert-subtext" id="alertSubtext">Active preview tracking</div>
+      </div>
+    </div>
+    <div class="audio-toggle" onclick="toggleAudio()">
+      <span id="audioIcon">🔊</span>
+    </div>
+  </div>
+
+  <!-- Central Viewport Display -->
+  <div class="viewport-card" id="viewportCard">
+    <video id="cameraVideo" playsinline autoplay muted></video>
+    <video id="videoPlayer" playsinline loop style="display: none;"></video>
+    <canvas id="displayCanvas"></canvas>
+    
+    <!-- Upload Dropzone Overlay -->
+    <div class="upload-dropzone" id="uploadDropzone" style="display: none;">
+      <div style="font-size: 40px; margin-bottom: 6px;">📁</div>
+      <div style="font-family: 'Chakra Petch'; font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">DROP OR SELECT MEDIA</div>
+      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px; max-width: 280px; line-height: 1.4;">
+        Upload test road photos (JPG, PNG) or dashcam videos (MP4, MOV) to run live detection
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="action-btn primary" style="padding: 9px 15px; font-size: 12px;" onclick="document.getElementById('snapshotInput').click()">
+          📷 Choose Photo
+        </button>
+        <button class="action-btn accent" style="padding: 9px 15px; font-size: 12px;" onclick="document.getElementById('videoFileInput').click()">
+          📼 Choose Video
+        </button>
+      </div>
+    </div>
+
+    <div class="hud-crosshair"></div>
+    <div class="hud-overlay-strip">
+      <span id="fpsOverlay">FPS: 0.0</span>
+      <span id="modelOverlay">GV-YOLO26</span>
+      <span id="trackOverlay">Active Tracks: 0</span>
+    </div>
+  </div>
+
+  <!-- Control Deck -->
+  <div class="control-deck" id="cameraControls">
+    <button class="action-btn primary" id="btnStartCamera" onclick="toggleCamera()">
+      <span id="btnCameraIcon">▶</span>
+      <span id="btnCameraLabel">Start Camera</span>
+    </button>
+    <button class="action-btn" onclick="flipCamera()">
+      <span>🔄</span> Flip Camera
+    </button>
+  </div>
+
+  <div class="control-deck" id="uploadControls" style="display: none;">
+    <button class="action-btn primary" onclick="document.getElementById('snapshotInput').click()">
+      <span>📷</span> Select Photo
+    </button>
+    <button class="action-btn accent" onclick="document.getElementById('videoFileInput').click()">
+      <span>📼</span> Select Video
+    </button>
+    
+    <!-- Video playback controls (when custom video loaded) -->
+    <div class="video-control-row" id="customVideoBar" style="display: none;">
+      <button class="action-btn" id="btnPlayPauseVideo" onclick="toggleCustomVideoPlayback()" style="flex: 1;">
+        <span>⏸</span> Pause Video
+      </button>
+      <button class="action-btn" onclick="restartCustomVideo()" style="flex: 1;">
+        <span>🔄</span> Replay
+      </button>
+    </div>
+
+    <input type="file" id="snapshotInput" accept="image/*" onchange="handleSnapshot(event)">
+    <input type="file" id="videoFileInput" accept="video/*" onchange="handleCustomVideo(event)">
+  </div>
+
+  <!-- Telemetry Metrics -->
+  <div class="telemetry-grid">
+    <div class="telemetry-card">
+      <div class="telemetry-label">Inference FPS</div>
+      <div class="telemetry-value" id="valFps">0.0</div>
+    </div>
+    <div class="telemetry-card">
+      <div class="telemetry-label">Speed Bumps</div>
+      <div class="telemetry-value" id="valBumps" style="color: var(--neon-green)">0</div>
+    </div>
+    <div class="telemetry-card">
+      <div class="telemetry-label">Potholes</div>
+      <div class="telemetry-value" id="valPotholes" style="color: var(--neon-orange)">0</div>
+    </div>
+  </div>
+
+  <!-- Benchmark Presets Section -->
+  <div class="section-title">
+    <span>Benchmark Test Scenes (Report)</span>
+    <span style="font-size: 11px; color: var(--neon-cyan); cursor: pointer;" onclick="resetTrackerState()">[Reset Tracker]</span>
+  </div>
+  <div class="clips-scroll" id="clipsList">
+    <!-- Populated dynamically via /api/clips -->
+  </div>
+
+  <!-- Hidden offscreen processing canvas -->
+  <canvas id="captureCanvas" width="640" height="640" style="display: none;"></canvas>
+
+  <script>
+    // System State
+    let currentMode = 'camera';
+    let selectedModel = 'gv-yolo26';
+    let currentConfThreshold = 0.15;
+    let currentConfirmFrames = 1; // Default to 1 for instant reactive detections
+    let isCameraRunning = false;
+    let cameraFacing = 'environment';
+    let audioEnabled = true;
+    let processingFrame = false;
+    let cameraStream = null;
+    let audioCtx = null;
+    let lastAlertTime = 0;
+    let customVideoActive = false;
+
+    // Elements
+    const viewportCard = document.getElementById('viewportCard');
+    const uploadDropzone = document.getElementById('uploadDropzone');
+    const customVideoBar = document.getElementById('customVideoBar');
+    const btnPlayPauseVideo = document.getElementById('btnPlayPauseVideo');
+    const video = document.getElementById('cameraVideo');
+    const videoPlayer = document.getElementById('videoPlayer');
+    const canvas = document.getElementById('displayCanvas');
+    const ctx = canvas.getContext('2d');
+    const captureCanvas = document.getElementById('captureCanvas');
+    const captureCtx = captureCanvas.getContext('2d');
+    const alertBanner = document.getElementById('alertBanner');
+    const alertTitle = document.getElementById('alertTitle');
+    const alertIcon = document.getElementById('alertIcon');
+    const alertSubtext = document.getElementById('alertSubtext');
+    const valFps = document.getElementById('valFps');
+    const valBumps = document.getElementById('valBumps');
+    const valPotholes = document.getElementById('valPotholes');
+    const fpsOverlay = document.getElementById('fpsOverlay');
+    const modelOverlay = document.getElementById('modelOverlay');
+    const trackOverlay = document.getElementById('trackOverlay');
+    const brandBadge = document.getElementById('brandBadge');
+    const modelInfoText = document.getElementById('modelInfoText');
+
+    // Threshold & Filter Controls
+    function setSensitivity(val, btn) {
+      currentConfThreshold = val;
+      document.querySelectorAll('.sensitivity-group:first-child .chip-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      playSwitchTone();
+    }
+
+    function setFilterFrames(val, btn) {
+      currentConfirmFrames = val;
+      document.querySelectorAll('.sensitivity-group:last-child .chip-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      playSwitchTone();
+    }
+
+    // Model Selector Logic
+    async function selectModel(modelId) {
+      if (selectedModel === modelId) return;
+      selectedModel = modelId;
+
+      document.getElementById('btnModelGVOpt').classList.toggle('active', modelId === 'gv-yolo26-opt');
+      document.getElementById('btnModelGV').classList.toggle('active', modelId === 'gv-yolo26');
+      document.getElementById('btnModelSBP').classList.toggle('active', modelId === 'sbp-yolo');
+
+      if (modelId === 'gv-yolo26-opt') {
+        brandBadge.textContent = 'GV-YOLO26-Opt';
+        brandBadge.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+        brandBadge.style.color = '#ffffff';
+        modelOverlay.textContent = 'GV-YOLO26-Opt';
+        modelInfoText.textContent = '⭐ YOLO26n + C3k2 + GhostConv + P2 + LGDH (2.08M Params • 84.1% mAP)';
+      } else if (modelId === 'gv-yolo26') {
+        brandBadge.textContent = 'GV-YOLO26';
+        brandBadge.style.background = 'linear-gradient(135deg, #00f2fe, #4facfe)';
+        brandBadge.style.color = '#050b14';
+        modelOverlay.textContent = 'GV-YOLO26';
+        modelInfoText.textContent = '⚡ YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params • 82.8% mAP • NMS-Free)';
+      } else {
+        brandBadge.textContent = 'SBP-YOLO';
+        brandBadge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+        brandBadge.style.color = '#ffffff';
+        modelOverlay.textContent = 'SBP-YOLO';
+        modelInfoText.textContent = '🏆 YOLO11n + VoVGSCSPC + GhostConv + LEDH Distilled (2.62M Params • 86.9% mAP)';
+      }
+
+      playSwitchTone();
+
+      try {
+        const form = new FormData();
+        form.append('model_id', modelId);
+        await fetch('/api/select_model', { method: 'POST', body: form });
+      } catch (e) {
+        console.warn('Model select sync error:', e);
+      }
+    }
+
+    // Audio Feedback Synthesizer
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function playSwitchTone() {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(520, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(780, audioCtx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.13);
+      } catch (e) {}
+    }
+
+    function playHazardChime(isSpeedBump) {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const now = Date.now();
+      if (now - lastAlertTime < 1800) return;
+      lastAlertTime = now;
+
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = isSpeedBump ? 'sine' : 'triangle';
+        osc.frequency.setValueAtTime(isSpeedBump ? 880 : 660, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(isSpeedBump ? 1174 : 440, audioCtx.currentTime + 0.18);
+        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.26);
+      } catch (e) {
+        console.warn('Audio chime error:', e);
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      document.getElementById('audioIcon').textContent = audioEnabled ? '🔊' : '🔇';
+    }
+
+    // Mode Switcher
+    function switchMode(mode) {
+      currentMode = mode;
+      customVideoActive = false;
+      document.getElementById('tabCamera').classList.toggle('active', mode === 'camera');
+      document.getElementById('tabDemo').classList.toggle('active', mode === 'demo');
+      document.getElementById('tabUpload').classList.toggle('active', mode === 'upload');
+
+      document.getElementById('cameraControls').style.display = (mode === 'camera') ? 'grid' : 'none';
+      document.getElementById('uploadControls').style.display = (mode === 'upload') ? 'grid' : 'none';
+
+      if (mode === 'camera') {
+        videoPlayer.pause();
+        videoPlayer.style.display = 'none';
+        uploadDropzone.style.display = 'none';
+        customVideoBar.style.display = 'none';
+        canvas.style.display = 'block';
+      } else if (mode === 'demo') {
+        stopCamera();
+        uploadDropzone.style.display = 'none';
+        customVideoBar.style.display = 'none';
+        videoPlayer.style.display = 'block';
+        canvas.style.display = 'none';
+      } else if (mode === 'upload') {
+        stopCamera();
+        videoPlayer.pause();
+        videoPlayer.style.display = 'none';
+        canvas.style.display = 'block';
+        uploadDropzone.style.display = 'flex';
+        customVideoBar.style.display = 'none';
+      }
+    }
+
+    // Camera Controls
+    async function toggleCamera() {
+      initAudio();
+      if (isCameraRunning) {
+        stopCamera();
+      } else {
+        await startCamera();
+      }
+    }
+
+    async function startCamera() {
+      try {
+        const constraints = {
+          video: {
+            facingMode: { ideal: cameraFacing },
+            width: { ideal: 640 },
+            height: { ideal: 640 }
+          },
+          audio: false
+        };
+        cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = cameraStream;
+        await video.play();
+        isCameraRunning = true;
+        document.getElementById('btnCameraIcon').textContent = '⏹';
+        document.getElementById('btnCameraLabel').textContent = 'Stop Camera';
+        document.getElementById('btnStartCamera').classList.remove('primary');
+        document.getElementById('btnStartCamera').classList.add('danger');
+
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 640;
+        requestAnimationFrame(processCameraStream);
+      } catch (err) {
+        console.error('Camera access error:', err);
+        alert('Could not start live camera: ' + err.message + '\n\nTip: You can use "Select Photo" or test "Benchmark Clips".');
+      }
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      isCameraRunning = false;
+      document.getElementById('btnCameraIcon').textContent = '▶';
+      document.getElementById('btnCameraLabel').textContent = 'Start Camera';
+      document.getElementById('btnStartCamera').classList.add('primary');
+      document.getElementById('btnStartCamera').classList.remove('danger');
+    }
+
+    async function flipCamera() {
+      cameraFacing = (cameraFacing === 'environment') ? 'user' : 'environment';
+      if (isCameraRunning) {
+        stopCamera();
+        await startCamera();
+      }
+    }
+
+    // Live Camera Frame Inference Loop
+    async function processCameraStream() {
+      if (!isCameraRunning) return;
+
+      if (!processingFrame && video.readyState >= 2) {
+        processingFrame = true;
+
+        captureCanvas.width = 640;
+        captureCanvas.height = 640;
+        captureCtx.drawImage(video, 0, 0, 640, 640);
+        const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.7);
+
+        try {
+          const form = new FormData();
+          form.append('image_base64', dataUrl);
+          form.append('conf_threshold', currentConfThreshold.toString());
+          form.append('confirm_frames', currentConfirmFrames.toString());
+          form.append('model_name', selectedModel);
+
+          const resp = await fetch('/api/predict_frame', {
+            method: 'POST',
+            body: form
+          });
+          const res = await resp.json();
+
+          const img = new Image();
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = res.annotated_frame;
+
+          updateHud(res);
+        } catch (e) {
+          console.warn('Inference error:', e);
+        } finally {
+          processingFrame = false;
+        }
+      }
+
+      if (isCameraRunning) {
+        setTimeout(() => requestAnimationFrame(processCameraStream), 80);
+      }
+    }
+
+    // Live Custom Video Frame Inference Loop
+    async function processCustomVideoLoop() {
+      if (!customVideoActive || videoPlayer.paused || videoPlayer.ended) return;
+
+      if (!processingFrame && videoPlayer.readyState >= 2) {
+        processingFrame = true;
+
+        captureCanvas.width = 640;
+        captureCanvas.height = 640;
+        captureCtx.drawImage(videoPlayer, 0, 0, 640, 640);
+        const dataUrl = captureCanvas.toDataURL('image/jpeg', 0.75);
+
+        try {
+          const form = new FormData();
+          form.append('image_base64', dataUrl);
+          form.append('conf_threshold', currentConfThreshold.toString());
+          form.append('confirm_frames', currentConfirmFrames.toString());
+          form.append('model_name', selectedModel);
+
+          const resp = await fetch('/api/predict_frame', {
+            method: 'POST',
+            body: form
+          });
+          const res = await resp.json();
+
+          const img = new Image();
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+          };
+          img.src = res.annotated_frame;
+
+          updateHud(res);
+        } catch (e) {
+          console.warn('Video frame inference error:', e);
+        } finally {
+          processingFrame = false;
+        }
+      }
+
+      if (customVideoActive && !videoPlayer.paused) {
+        setTimeout(() => requestAnimationFrame(processCustomVideoLoop), 80);
+      }
+    }
+
+    function toggleCustomVideoPlayback() {
+      if (videoPlayer.paused) {
+        videoPlayer.play();
+        btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+        customVideoActive = true;
+        requestAnimationFrame(processCustomVideoLoop);
+      } else {
+        videoPlayer.pause();
+        btnPlayPauseVideo.innerHTML = '<span>▶</span> Resume Video';
+      }
+    }
+
+    function restartCustomVideo() {
+      videoPlayer.currentTime = 0;
+      videoPlayer.play();
+      btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+      customVideoActive = true;
+      resetTrackerState();
+      requestAnimationFrame(processCustomVideoLoop);
+    }
+
+    // Update HUD telemetry and alert states
+    function updateHud(res) {
+      valFps.textContent = res.fps.toFixed(1);
+      valBumps.textContent = (res.counts && res.counts['Speed Bump']) ? res.counts['Speed Bump'] : 0;
+      valPotholes.textContent = (res.counts && res.counts['Pothole']) ? res.counts['Pothole'] : 0;
+      fpsOverlay.textContent = `FPS: ${res.fps.toFixed(1)}`;
+      trackOverlay.textContent = `Tracks: ${res.detections ? res.detections.length : 0}`;
+      if (res.active_model) {
+        modelOverlay.textContent = res.active_model.name;
+      }
+
+      if (res.hazards_ahead && res.hazards_ahead.length > 0) {
+        const isBump = res.hazards_ahead.includes('Speed Bump');
+        alertBanner.className = 'hud-alert-banner alert-danger';
+        alertIcon.textContent = '⚠️';
+        alertTitle.textContent = 'WARNING: ' + res.hazards_ahead.join(' + ').toUpperCase() + ' AHEAD';
+        alertSubtext.textContent = `Detected at ${res.latency_ms} ms (${selectedModel.toUpperCase()} | Conf >= ${currentConfThreshold})`;
+        playHazardChime(isBump);
+      } else {
+        alertBanner.className = 'hud-alert-banner';
+        alertIcon.textContent = '🟢';
+        alertTitle.textContent = 'ROAD CLEAR';
+        alertSubtext.textContent = `Preview tracking (Threshold: ${currentConfThreshold})`;
+      }
+    }
+
+    // Snapshot / Photo Upload Handler
+    async function handleSnapshot(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      uploadDropzone.style.display = 'none';
+
+      // Visual feedback
+      alertBanner.className = 'hud-alert-banner alert-warning';
+      alertIcon.textContent = '⏳';
+      alertTitle.textContent = 'ANALYZING PHOTO...';
+      alertSubtext.textContent = `Running ${selectedModel.toUpperCase()} inference (Conf >= ${currentConfThreshold})`;
+
+      const form = new FormData();
+      form.append('file', file);
+      form.append('conf_threshold', currentConfThreshold.toString());
+      form.append('confirm_frames', '1');
+      form.append('model_name', selectedModel);
+
+      try {
+        const resp = await fetch('/api/predict_frame', {
+          method: 'POST',
+          body: form
+        });
+        if (!resp.ok) {
+          const errText = await resp.text();
+          throw new Error(`Server returned ${resp.status}: ${errText}`);
+        }
+        const res = await resp.json();
+
+        const img = new Image();
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+        };
+        img.src = res.annotated_frame;
+
+        updateHud(res);
+        if (!res.alert) {
+          alertTitle.textContent = 'NO HAZARDS DETECTED';
+          alertSubtext.textContent = `Processed in ${res.latency_ms} ms at conf ${currentConfThreshold}`;
+        }
+      } catch (err) {
+        alertBanner.className = 'hud-alert-banner alert-danger';
+        alertIcon.textContent = '❌';
+        alertTitle.textContent = 'PROCESSING FAILED';
+        alertSubtext.textContent = err.message;
+        console.error('Failed to process image:', err);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    // Custom Video Upload Handler
+    async function handleCustomVideo(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      uploadDropzone.style.display = 'none';
+      initAudio();
+
+      alertBanner.className = 'hud-alert-banner alert-warning';
+      alertIcon.textContent = '🎬';
+      alertTitle.textContent = 'LOADING VIDEO...';
+      alertSubtext.textContent = `Starting ${selectedModel.toUpperCase()} tracking`;
+
+      const videoUrl = URL.createObjectURL(file);
+      videoPlayer.src = videoUrl;
+      videoPlayer.muted = true;
+      videoPlayer.loop = true;
+      videoPlayer.playsInline = true;
+
+      try {
+        await videoPlayer.play();
+        customVideoActive = true;
+        customVideoBar.style.display = 'flex';
+        btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+        resetTrackerState();
+        requestAnimationFrame(processCustomVideoLoop);
+      } catch (e) {
+        console.error('Video play error:', e);
+        alert('Could not auto-play video: ' + e.message);
+      } finally {
+        event.target.value = '';
+      }
+    }
+
+    // Drag and Drop Handling on Viewport
+    viewportCard.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      viewportCard.classList.add('dragover');
+    });
+
+    viewportCard.addEventListener('dragleave', () => {
+      viewportCard.classList.remove('dragover');
+    });
+
+    viewportCard.addEventListener('drop', (e) => {
+      e.preventDefault();
+      viewportCard.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        const file = e.dataTransfer.files[0];
+        if (file.type.startsWith('video/')) {
+          handleCustomVideo({ target: { files: [file], value: '' } });
+        } else if (file.type.startsWith('image/')) {
+          handleSnapshot({ target: { files: [file], value: '' } });
+        }
+      }
+    });
+
+    // Load and render Benchmark Presets
+    async function loadBenchmarkClips() {
+      try {
+        const resp = await fetch('/api/clips');
+        const clips = await resp.json();
+        const container = document.getElementById('clipsList');
+        container.innerHTML = '';
+
+        clips.forEach((c, idx) => {
+          const card = document.createElement('div');
+          card.className = 'clip-card' + (idx === 0 ? ' active' : '');
+          card.innerHTML = `
+            <div class="clip-name">${c.name}</div>
+            <div class="clip-desc">${c.scene}</div>
+          `;
+          card.onclick = () => {
+            document.querySelectorAll('.clip-card').forEach(el => el.classList.remove('active'));
+            card.classList.add('active');
+            playBenchmarkClip(c);
+          };
+          container.appendChild(card);
+        });
+      } catch (e) {
+        console.error('Failed to load clips:', e);
+      }
+    }
+
+    function playBenchmarkClip(clip) {
+      switchMode('demo');
+      videoPlayer.src = clip.annotated_video;
+      videoPlayer.load();
+      videoPlayer.play();
+
+      alertBanner.className = 'hud-alert-banner alert-warning';
+      alertIcon.textContent = '🎬';
+      alertTitle.textContent = clip.name;
+      alertSubtext.textContent = clip.scene;
+    }
+
+    async function resetTrackerState() {
+      try {
+        await fetch('/api/reset_tracker', { method: 'POST' });
+        alertTitle.textContent = 'ROAD CLEAR';
+        alertBanner.className = 'hud-alert-banner';
+        valBumps.textContent = '0';
+        valPotholes.textContent = '0';
+      } catch (e) {
+        console.warn(e);
+      }
+    }
+
+    // Initialize on load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadBenchmarkClips();
+      canvas.width = 640;
+      canvas.height = 400;
+      ctx.fillStyle = '#080c14';
+      ctx.fillRect(0, 0, 640, 400);
+      ctx.fillStyle = '#475569';
+      ctx.font = '14px Inter';
+      ctx.textAlign = 'center';
+      ctx.fillText('Tap "Start Camera", choose a "Benchmark Clip", or "Upload Media"', 320, 200);
+    });
+  </script>
+</body>
+</html>

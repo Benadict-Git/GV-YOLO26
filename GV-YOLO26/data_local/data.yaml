@@ -1,0 +1,7 @@
+path: /home/benny/Projects/GV-YOLO26/datasets/speed12
+train: /home/benny/Projects/GV-YOLO26/GV-YOLO26/data_local/train_list.txt
+val: /home/benny/Projects/GV-YOLO26/GV-YOLO26/data_local/val_list.txt
+test: test/images
+names:
+  0: Pothole
+  1: Speed Bump

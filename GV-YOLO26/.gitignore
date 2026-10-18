@@ -1,0 +1,8 @@
+runs/
+results/
+*.pt
+!weights/gv_yolo26_simple_best.pt
+*.engine
+*.onnx
+__pycache__/
+venv/

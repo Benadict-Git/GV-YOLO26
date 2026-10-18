@@ -1,0 +1,56 @@
+{
+  "clips": [
+    {
+      "video": "v1.mp4",
+      "frames": 240,
+      "frames_with_hazard": 98,
+      "frames_with_raw_detection": 108,
+      "raw_tracks": 8,
+      "confirmed_tracks": 6,
+      "unique_speed_bumps": 3,
+      "unique_potholes": 3,
+      "processing_fps": 5.0,
+      "output": "results/video/v1_gv.mp4",
+      "scene": "daytime, rain"
+    },
+    {
+      "video": "v2.mp4",
+      "frames": 240,
+      "frames_with_hazard": 111,
+      "frames_with_raw_detection": 126,
+      "raw_tracks": 12,
+      "confirmed_tracks": 6,
+      "unique_speed_bumps": 4,
+      "unique_potholes": 2,
+      "processing_fps": 4.9,
+      "output": "results/video/v2_gv.mp4",
+      "scene": "night"
+    },
+    {
+      "video": "v3.mp4",
+      "frames": 240,
+      "frames_with_hazard": 134,
+      "frames_with_raw_detection": 146,
+      "raw_tracks": 17,
+      "confirmed_tracks": 12,
+      "unique_speed_bumps": 0,
+      "unique_potholes": 12,
+      "processing_fps": 5.1,
+      "output": "results/video/v3_gv.mp4",
+      "scene": "night"
+    },
+    {
+      "video": "v4.mp4",
+      "frames": 240,
+      "frames_with_hazard": 39,
+      "frames_with_raw_detection": 47,
+      "raw_tracks": 7,
+      "confirmed_tracks": 2,
+      "unique_speed_bumps": 0,
+      "unique_potholes": 2,
+      "processing_fps": 5.0,
+      "output": "results/video/v4_gv.mp4",
+      "scene": "dusk"
+    }
+  ]
+}

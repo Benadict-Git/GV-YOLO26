@@ -1,0 +1,82 @@
+{
+ "test_overlap": {
+  "total": 1125,
+  "share_photo_with_train": 526,
+  "share_sequence_with_train": 839,
+  "clean": 286
+ },
+ "valid_overlap": {
+  "total": 750,
+  "share_photo_with_train": 378,
+  "share_sequence_with_train": 554,
+  "clean": 196
+ },
+ "folders": {
+  "train": 5725,
+  "valid": 750,
+  "test": 1125
+ },
+ "total_images": 7600,
+ "splits": {
+  "train_used": {
+   "images": 5243,
+   "background": 264,
+   "instances": {
+    "Pothole": 8300,
+    "Speed Bump": 2144
+   },
+   "images_with": {
+    "Pothole": 3041,
+    "Speed Bump": 1938
+   }
+  },
+  "val_carved": {
+   "images": 586,
+   "background": 44,
+   "instances": {
+    "Pothole": 906,
+    "Speed Bump": 233
+   },
+   "images_with": {
+    "Pothole": 334,
+    "Speed Bump": 208
+   }
+  },
+  "test": {
+   "images": 1125,
+   "background": 0,
+   "instances": {
+    "Pothole": 1802,
+    "Speed Bump": 497
+   },
+   "images_with": {
+    "Pothole": 675,
+    "Speed Bump": 450
+   }
+  },
+  "valid_folder": {
+   "images": 750,
+   "background": 0,
+   "instances": {
+    "Pothole": 1197,
+    "Speed Bump": 343
+   },
+   "images_with": {
+    "Pothole": 450,
+    "Speed Bump": 300
+   }
+  },
+  "clean_holdout": {
+   "images": 482,
+   "background": 0,
+   "instances": {
+    "Pothole": 354,
+    "Speed Bump": 384
+   },
+   "images_with": {
+    "Pothole": 145,
+    "Speed Bump": 337
+   }
+  }
+ }
+}

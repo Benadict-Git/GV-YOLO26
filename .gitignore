@@ -1,0 +1,49 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments & symlinks
+venv
+venv/
+GV-YOLO26/venv/
+.venv/
+env/
+kaggle_jobs
+
+# Datasets and large raw media
+datasets/
+video/
+*.tar.gz
+*.zip
+
+# Large binary weights & TensorRT engines
+weights_kaggle/
+GV-YOLO26/weights_kaggle/
+*.engine
+*.onnx
+yolo26n.pt
+GV-YOLO26/weights/gv_yolo26_best.pt
+
+# Third-party local clones / experiments
+ultralytics-yolo11/
+ultralytics-distill/
+
+# Training outputs & experiment runs
+runs/
+GV-YOLO26/runs/
+report_build/build/
+report_build/backup/
+
+# Temp files, backups, locks
+*.bak
+*.tmp
+.~lock.*
+claudesession.txt
+fix_residual_report_data.py
+update_report.py
+
+# OS / Editor
+.DS_Store
+.idea/
+.vscode/

@@ -1,0 +1,13 @@
+# Humps/Bumps & Potholes Detection dataset, version 8 (Roboflow Universe, CC BY 4.0)
+# https://universe.roboflow.com/detection-system/humps-bumps-potholes-detection/dataset/8
+# Download in "YOLOv8" format and unzip so that `path` below contains train/, valid/ and test/.
+# Check the class order against the data.yaml shipped with the download and keep the same order here.
+
+path: ../datasets/humps-bumps-potholes # dataset root (relative to this file's directory or absolute)
+train: train/images
+val: valid/images
+test: test/images
+
+names:
+  0: Pothole
+  1: Speed Bump
