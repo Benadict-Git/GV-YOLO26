@@ -3,22 +3,46 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>GV-YOLO26 & SBP-YOLO Road Hazard Detection HUD</title>
-  <meta name="theme-color" content="#0a0e17">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>GV-YOLO26 Road Hazard & Suspension Preview</title>
+  <meta name="theme-color" content="#ffffff">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-dark: #080c14;
-      --card-bg: rgba(17, 24, 39, 0.85);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --neon-cyan: #00f2fe;
-      --neon-green: #10b981;
-      --neon-orange: #ff8a00;
-      --neon-red: #ef4444;
-      --text-muted: #94a3b8;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --border: #e2e8f0;
+      --border-hover: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      
+      --brand: #2563eb;
+      --brand-hover: #1d4ed8;
+      --brand-light: #eff6ff;
+      --brand-border: #bfdbfe;
+
+      --success-bg: #f0fdf4;
+      --success-border: #bbf7d0;
+      --success-text: #166534;
+      --success-icon: #16a34a;
+
+      --warning-bg: #fffbeb;
+      --warning-border: #fde68a;
+      --warning-text: #92400e;
+      --warning-icon: #d97706;
+
+      --danger-bg: #fef2f2;
+      --danger-border: #fecaca;
+      --danger-text: #991b1b;
+      --danger-icon: #dc2626;
+
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 14px;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
     }
 
     * {
@@ -26,314 +50,446 @@
       margin: 0;
       padding: 0;
       -webkit-tap-highlight-color: transparent;
-      user-select: none;
     }
 
     body {
-      background-color: var(--bg-dark);
-      color: #f8fafc;
-      font-family: 'Inter', -apple-system, sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       min-height: 100vh;
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
-      padding-bottom: 24px;
+      padding-bottom: 32px;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* Top Navigation HUD */
+    /* Top Navigation Header */
     header {
-      background: rgba(13, 19, 33, 0.95);
-      backdrop-filter: blur(12px);
-      border-bottom: 1px solid var(--card-border);
-      padding: 12px 16px;
+      background: #ffffff;
+      border-bottom: 1px solid var(--border);
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       position: sticky;
       top: 0;
       z-index: 50;
+      box-shadow: var(--shadow-sm);
     }
 
-    .brand {
+    .brand-wrap {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px;
     }
 
-    .logo-badge {
-      background: linear-gradient(135deg, #00f2fe, #4facfe);
-      color: #050b14;
-      font-family: 'Chakra Petch', sans-serif;
-      font-weight: 700;
-      font-size: 13px;
-      padding: 3px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-      transition: all 0.3s ease;
-    }
-
-    .brand-title {
-      font-family: 'Chakra Petch', sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      color: #f1f5f9;
-    }
-
-    .hud-status-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-family: 'Chakra Petch', sans-serif;
-      background: rgba(16, 185, 129, 0.12);
-      color: var(--neon-green);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      padding: 3px 10px;
-      border-radius: 20px;
-    }
-
-    .dot {
-      width: 6px;
-      height: 6px;
-      background: currentColor;
-      border-radius: 50%;
-      animation: pulse-dot 1.5s infinite;
-    }
-
-    @keyframes pulse-dot {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-    }
-
-    /* Model Selection Deck */
-    .model-bar {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      padding: 10px 14px 4px 14px;
-      background: rgba(10, 15, 26, 0.85);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    }
-
-    .model-pill {
-      background: rgba(18, 25, 42, 0.85);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 8px 10px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      transition: all 0.25s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .model-pill.active {
-      border-color: var(--neon-cyan);
-      background: rgba(0, 242, 254, 0.1);
-      box-shadow: 0 0 14px rgba(0, 242, 254, 0.18);
-    }
-
-    .model-pill#btnModelSBP.active {
-      border-color: var(--neon-green);
-      background: rgba(16, 185, 129, 0.1);
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.18);
-    }
-
-    .model-pill#btnModelGVOpt.active {
-      border-color: #f59e0b;
-      background: rgba(245, 158, 11, 0.12);
-      box-shadow: 0 0 14px rgba(245, 158, 11, 0.22);
-    }
-
-    .model-pill-tag {
-      font-family: 'Chakra Petch', sans-serif;
-      font-size: 9px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
-    }
-
-    .model-pill.active .model-pill-tag {
-      color: var(--neon-cyan);
-    }
-
-    .model-pill#btnModelSBP.active .model-pill-tag {
-      color: var(--neon-green);
-    }
-
-    .model-pill-name {
-      font-family: 'Chakra Petch', sans-serif;
-      font-size: 13.5px;
-      font-weight: 700;
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--text-main);
       color: #ffffff;
-      letter-spacing: 0.3px;
-    }
-
-    .model-pill-sub {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-family: 'Chakra Petch', monospace;
-    }
-
-    .model-info-strip {
-      padding: 6px 14px 6px 14px;
-      font-size: 10.5px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      background: rgba(10, 15, 26, 0.6);
-    }
-
-    /* Sensitivity and Temporal Toolbar */
-    .sensitivity-toolbar {
-      padding: 8px 14px;
-      background: rgba(13, 19, 33, 0.85);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .sensitivity-group {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .toolbar-label {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: 'Chakra Petch', sans-serif;
-      margin-right: 2px;
-    }
-
-    .chip-btn {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-family: 'Chakra Petch', sans-serif;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .chip-btn.active {
-      background: rgba(0, 242, 254, 0.16);
-      border-color: var(--neon-cyan);
-      color: #ffffff;
-      font-weight: 600;
-      box-shadow: 0 0 8px rgba(0, 242, 254, 0.25);
-    }
-
-    /* Mode Navigation Tabs */
-    .nav-tabs {
-      display: flex;
-      background: rgba(15, 23, 42, 0.6);
-      padding: 6px 12px;
-      gap: 8px;
-      border-bottom: 1px solid var(--card-border);
-    }
-
-    .tab-btn {
-      flex: 1;
-      text-align: center;
-      padding: 8px 4px;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tab-btn.active {
-      color: #ffffff;
-      background: rgba(255, 255, 255, 0.08);
-      font-weight: 600;
-    }
-
-    /* Alert Banner */
-    .hud-alert-banner {
-      margin: 10px 14px 6px 14px;
-      padding: 10px 14px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-family: 'Chakra Petch', sans-serif;
-      background: rgba(16, 185, 129, 0.12);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: var(--neon-green);
-      transition: all 0.25s ease;
-    }
-
-    .hud-alert-banner.alert-danger {
-      background: rgba(239, 68, 68, 0.18);
-      border-color: rgba(239, 68, 68, 0.6);
-      color: #fca5a5;
-      animation: alert-flash 0.9s infinite alternate;
-    }
-
-    .hud-alert-banner.alert-warning {
-      background: rgba(255, 138, 0, 0.18);
-      border-color: rgba(255, 138, 0, 0.5);
-      color: #fed7aa;
-    }
-
-    @keyframes alert-flash {
-      from { box-shadow: 0 0 4px rgba(239, 68, 68, 0.2); }
-      to { box-shadow: 0 0 16px rgba(239, 68, 68, 0.6); }
-    }
-
-    .alert-text-group {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .alert-icon {
-      font-size: 18px;
-    }
-
-    .alert-title {
-      font-weight: 700;
-      font-size: 14px;
-      letter-spacing: 0.5px;
-    }
-
-    .alert-subtext {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-family: 'Inter', sans-serif;
-    }
-
-    /* Camera & Canvas Viewport */
-    .viewport-card {
-      margin: 6px 14px 10px 14px;
-      background: #000000;
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      position: relative;
-      overflow: hidden;
-      aspect-ratio: 1 / 1;
-      max-height: 440px;
+      border-radius: var(--radius-sm);
       display: flex;
       align-items: center;
       justify-content: center;
     }
 
-    .viewport-card.dragover {
-      border-color: var(--neon-cyan);
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+    .brand-titles {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .brand-title {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.2px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: var(--brand-light);
+      color: var(--brand);
+      border: 1px solid var(--brand-border);
+    }
+
+    .brand-subtitle {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      background: var(--success-bg);
+      color: var(--success-text);
+      border: 1px solid var(--success-border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--success-icon);
+      border-radius: 50%;
+    }
+
+    .icon-btn {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 34px;
+      height: 34px;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--bg);
+      color: var(--text-main);
+      border-color: var(--border-hover);
+    }
+
+    /* Main Container */
+    .app-container {
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* Model Selection Deck */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+    }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      color: var(--text-muted);
+    }
+
+    .section-action {
+      font-size: 11.5px;
+      color: var(--brand);
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    .section-action:hover {
+      text-decoration: underline;
+    }
+
+    .model-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    @media (max-width: 680px) {
+      .model-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .model-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .model-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    .model-card.active {
+      border-color: var(--brand);
+      background: #fbfdff;
+      box-shadow: 0 0 0 1px var(--brand), var(--shadow-sm);
+    }
+
+    .model-badge-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .model-tag {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      color: var(--text-muted);
+    }
+
+    .model-card.active .model-tag {
+      color: var(--brand);
+    }
+
+    .model-check {
+      display: none;
+      width: 14px;
+      height: 14px;
+      color: var(--brand);
+    }
+
+    .model-card.active .model-check {
+      display: block;
+    }
+
+    .model-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.1px;
+    }
+
+    .model-meta {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .model-info-banner {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    /* Controls & Settings Bar */
+    .controls-panel {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .control-label-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .control-chips {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .chip:hover {
+      background: #f1f5f9;
+      color: var(--text-main);
+    }
+
+    .chip.active {
+      background: var(--text-main);
+      color: #ffffff;
+      border-color: var(--text-main);
+      font-weight: 600;
+    }
+
+    /* Mode Navigation Tabs */
+    .nav-tabs-wrap {
+      display: flex;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: var(--radius-md);
+      gap: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .tab-btn {
+      flex: 1;
+      text-align: center;
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--text-main);
+      background: #ffffff;
+      font-weight: 600;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Alert Banner */
+    .alert-card {
+      padding: 14px 18px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: all 0.2s ease;
+      background: var(--success-bg);
+      border: 1px solid var(--success-border);
+      color: var(--success-text);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .alert-card.alert-warning {
+      background: var(--warning-bg);
+      border-color: var(--warning-border);
+      color: var(--warning-text);
+    }
+
+    .alert-card.alert-danger {
+      background: var(--danger-bg);
+      border-color: var(--danger-border);
+      color: var(--danger-text);
+    }
+
+    .alert-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .alert-icon-box {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .alert-info-text {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .alert-headline {
+      font-weight: 700;
+      font-size: 14px;
+      letter-spacing: -0.1px;
+    }
+
+    .alert-details {
+      font-size: 12px;
+      opacity: 0.85;
+      line-height: 1.4;
+    }
+
+    /* Video & Canvas Viewport Card */
+    .viewport-container {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 10px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .viewport-box {
+      background: #0f172a;
+      border-radius: var(--radius-md);
+      position: relative;
+      overflow: hidden;
+      aspect-ratio: 16 / 10;
+      max-height: 520px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .viewport-box.dragover {
+      outline: 2px dashed var(--brand);
+      outline-offset: -4px;
     }
 
     #cameraVideo {
@@ -353,14 +509,37 @@
       display: block;
     }
 
+    /* Floating Status Pill inside Viewport */
+    .viewport-telemetry {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 20px;
+      padding: 4px 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      font-weight: 500;
+      color: #f1f5f9;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .viewport-telemetry span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
     /* Dropzone inside viewport */
     .upload-dropzone {
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(10, 15, 26, 0.92);
+      inset: 0;
+      background: rgba(248, 250, 252, 0.96);
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -370,189 +549,193 @@
       z-index: 20;
     }
 
-    .hud-crosshair {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 32px;
-      height: 32px;
-      border: 1px solid rgba(0, 242, 254, 0.25);
-      border-radius: 50%;
-      pointer-events: none;
+    .dropzone-icon {
+      width: 48px;
+      height: 48px;
+      color: var(--text-subtle);
+      margin-bottom: 8px;
     }
 
-    .hud-crosshair::before, .hud-crosshair::after {
-      content: '';
-      position: absolute;
-      background: rgba(0, 242, 254, 0.4);
+    .dropzone-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
     }
-    .hud-crosshair::before { top: 50%; left: 2px; right: 2px; height: 1px; }
-    .hud-crosshair::after { left: 50%; top: 2px; bottom: 2px; width: 1px; }
 
-    .hud-overlay-strip {
-      position: absolute;
-      bottom: 8px;
-      left: 10px;
-      right: 10px;
+    .dropzone-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      max-width: 320px;
+      line-height: 1.4;
+    }
+
+    .dropzone-actions {
       display: flex;
-      justify-content: space-between;
-      font-family: 'Chakra Petch', monospace;
-      font-size: 11px;
-      color: rgba(255, 255, 255, 0.7);
-      background: rgba(0, 0, 0, 0.6);
-      padding: 4px 8px;
-      border-radius: 6px;
-      pointer-events: none;
-      z-index: 10;
-    }
-
-    /* Action Deck Controls */
-    .control-deck {
-      padding: 0 14px 12px 14px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
 
-    .action-btn {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      color: #f1f5f9;
-      padding: 12px;
-      border-radius: 10px;
+    /* Action Deck Controls */
+    .action-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .btn {
+      padding: 10px 18px;
+      border-radius: var(--radius-sm);
       font-size: 13px;
       font-weight: 600;
-      font-family: 'Chakra Petch', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
       gap: 8px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      border: 1px solid var(--border);
+      background: #ffffff;
+      color: var(--text-main);
+      transition: all 0.15s ease;
+      user-select: none;
     }
 
-    .action-btn:active {
-      transform: scale(0.97);
+    .btn:hover {
+      background: #f8fafc;
+      border-color: var(--border-hover);
     }
 
-    .action-btn.primary {
-      background: linear-gradient(135deg, #00f2fe, #4facfe);
-      color: #050b14;
-      border: none;
-      box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
-    }
-
-    .action-btn.danger {
-      background: #ef4444;
+    .btn-primary {
+      background: var(--text-main);
       color: #ffffff;
-      border: none;
+      border-color: var(--text-main);
     }
 
-    .action-btn.accent {
-      background: rgba(16, 185, 129, 0.2);
-      border-color: rgba(16, 185, 129, 0.5);
-      color: var(--neon-green);
+    .btn-primary:hover {
+      background: #1e293b;
+      border-color: #1e293b;
     }
 
-    .video-control-row {
-      display: flex;
-      gap: 10px;
-      grid-column: 1 / -1;
+    .btn-danger {
+      background: var(--danger-icon);
+      color: #ffffff;
+      border-color: var(--danger-icon);
     }
 
-    /* Telemetry Grid */
-    .telemetry-grid {
+    .btn-danger:hover {
+      background: #b91c1c;
+      border-color: #b91c1c;
+    }
+
+    /* Telemetry Metrics Grid */
+    .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      padding: 0 14px 12px 14px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
     }
 
-    .telemetry-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 10px;
-      text-align: center;
+    @media (max-width: 680px) {
+      .metrics-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
 
-    .telemetry-label {
-      font-size: 10.5px;
+    .metric-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-label {
+      font-size: 11.5px;
+      font-weight: 600;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin-bottom: 4px;
-      font-family: 'Chakra Petch', sans-serif;
+      letter-spacing: 0.3px;
     }
 
-    .telemetry-value {
-      font-size: 18px;
+    .metric-value {
+      font-size: 22px;
       font-weight: 700;
-      font-family: 'Chakra Petch', monospace;
-      color: #ffffff;
+      color: var(--text-main);
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.3px;
     }
 
-    /* Presets and Benchmarks */
-    .section-title {
-      margin: 10px 14px 8px 14px;
-      font-family: 'Chakra Petch', sans-serif;
-      font-size: 12.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: var(--text-muted);
+    .metric-sub {
+      font-size: 11px;
+      color: var(--text-subtle);
+      margin-top: 2px;
+    }
+
+    /* Benchmark Clips Section */
+    .clips-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 768px) {
+      .clips-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .clip-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .clip-card:hover {
+      border-color: var(--border-hover);
+      box-shadow: var(--shadow-md);
+    }
+
+    .clip-card.active {
+      border-color: var(--brand);
+      background: #fbfdff;
+      box-shadow: 0 0 0 1px var(--brand), var(--shadow-sm);
+    }
+
+    .clip-top {
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
-    .clips-scroll {
-      display: flex;
-      gap: 10px;
-      padding: 0 14px 10px 14px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .clips-scroll::-webkit-scrollbar {
-      display: none;
-    }
-
-    .clip-card {
-      flex: 0 0 145px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 10px;
-      padding: 10px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .clip-card.active {
-      border-color: var(--neon-cyan);
-      background: rgba(0, 242, 254, 0.08);
+    .clip-badge {
+      font-size: 10px;
+      font-weight: 600;
+      background: var(--bg);
+      color: var(--text-muted);
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
     }
 
     .clip-name {
-      font-family: 'Chakra Petch', sans-serif;
       font-size: 13px;
       font-weight: 600;
-      color: #f1f5f9;
-      margin-bottom: 4px;
+      color: var(--text-main);
     }
 
     .clip-desc {
-      font-size: 10px;
+      font-size: 11.5px;
       color: var(--text-muted);
-      line-height: 1.3;
-    }
-
-    .audio-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      color: var(--text-muted);
-      cursor: pointer;
+      line-height: 1.35;
     }
 
     #snapshotInput, #videoFileInput {
@@ -564,172 +747,324 @@
 
   <!-- Top Header Navigation -->
   <header>
-    <div class="brand">
-      <span class="logo-badge" id="brandBadge">GV-YOLO26</span>
-      <span class="brand-title">ROAD HAZARD HUD</span>
+    <div class="brand-wrap">
+      <div class="brand-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/>
+          <circle cx="7" cy="17" r="2"/>
+          <path d="M9 17h6"/>
+          <circle cx="17" cy="17" r="2"/>
+        </svg>
+      </div>
+      <div class="brand-titles">
+        <div class="brand-title">
+          <span>GV-YOLO26</span>
+          <span class="brand-badge" id="brandBadge">Proposed · 82.8%</span>
+        </div>
+        <div class="brand-subtitle">Monocular Road Hazard & Active Suspension Preview Control</div>
+      </div>
     </div>
-    <div class="hud-status-badge" id="systemStatus">
-      <span class="dot"></span>
-      <span id="statusText">ONLINE</span>
+    
+    <div class="header-actions">
+      <div class="status-pill" id="systemStatus">
+        <span class="status-dot"></span>
+        <span id="statusText">System Ready</span>
+      </div>
+      <button class="icon-btn" id="audioToggleBtn" title="Toggle audio alert" onclick="toggleAudio()">
+        <span id="audioIcon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+          </svg>
+        </span>
+      </button>
+      <button class="icon-btn" title="Reset tracking state" onclick="resetTrackerState()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
-  <!-- Model Switcher Bar -->
-  <div class="model-bar">
-    <div class="model-pill active" id="btnModelGV" onclick="selectModel('gv-yolo26')">
-      <div class="model-pill-tag">⚡ PROPOSED (82.8%)</div>
-      <div class="model-pill-name">GV-YOLO26</div>
-      <div class="model-pill-sub">2.08M P • Backbone Mod</div>
-    </div>
-    <div class="model-pill" id="btnModelGVOpt" onclick="selectModel('gv-yolo26-opt')">
-      <div class="model-pill-tag" style="color: #f59e0b;">⭐ GHOST-OPT (84.1%)</div>
-      <div class="model-pill-name">GV-YOLO26-Opt</div>
-      <div class="model-pill-sub">2.08M P • Ghost+P2 Head</div>
-    </div>
-    <div class="model-pill" id="btnModelSBP" onclick="selectModel('sbp-yolo')">
-      <div class="model-pill-tag">🏆 BENCHMARK</div>
-      <div class="model-pill-name">SBP-YOLO</div>
-      <div class="model-pill-sub">2.62M P • 86.9% mAP</div>
-    </div>
-  </div>
+  <!-- Main Container -->
+  <main class="app-container">
 
-  <!-- Active Model Specs Badge -->
-  <div class="model-info-strip" id="modelInfoStrip">
-    <span id="modelInfoText">⚡ YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params • 82.8% mAP)</span>
-    <span style="font-family: 'Chakra Petch'; color: var(--neon-cyan); cursor: pointer;" onclick="resetTrackerState()">[Reset ID]</span>
-  </div>
+    <!-- Model Switcher Deck -->
+    <div>
+      <div class="section-header">
+        <span class="section-label">Detection Architecture</span>
+        <span class="section-action" onclick="resetTrackerState()">Reset Trackers</span>
+      </div>
+      <div class="model-grid">
+        <div class="model-card active" id="btnModelGV" onclick="selectModel('gv-yolo26')">
+          <div class="model-badge-row">
+            <span class="model-tag">Proposed Architecture</span>
+            <svg class="model-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="model-name">GV-YOLO26</div>
+          <div class="model-meta">2.08M Params · 5.3 GFLOPs · 82.8% mAP<br>VoVGSCSPC + GhostConv · NMS-Free</div>
+        </div>
 
-  <!-- Sensitivity & Temporal Filter Toolbar -->
-  <div class="sensitivity-toolbar">
-    <div class="sensitivity-group">
-      <span class="toolbar-label">🎯 Threshold:</span>
-      <button class="chip-btn" id="sensNight" onclick="setSensitivity(0.12, this)">0.12 (Night)</button>
-      <button class="chip-btn active" id="sensHigh" onclick="setSensitivity(0.15, this)">0.15 (Responsive)</button>
-      <button class="chip-btn" id="sensMed" onclick="setSensitivity(0.25, this)">0.25 (Balanced)</button>
-      <button class="chip-btn" id="sensLow" onclick="setSensitivity(0.35, this)">0.35 (Strict)</button>
-    </div>
-    <div class="sensitivity-group">
-      <span class="toolbar-label">⏱️ Temporal:</span>
-      <button class="chip-btn active" id="filterFast" onclick="setFilterFrames(1, this)">1-Frame (Fast)</button>
-      <button class="chip-btn" id="filterStable" onclick="setFilterFrames(2, this)">2-Frames (Stable)</button>
-    </div>
-  </div>
+        <div class="model-card" id="btnModelGVOpt" onclick="selectModel('gv-yolo26-opt')">
+          <div class="model-badge-row">
+            <span class="model-tag">High-Capacity Variant</span>
+            <svg class="model-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="model-name">GV-YOLO26-Opt</div>
+          <div class="model-meta">2.08M Params · 5.8 GFLOPs · 84.1% mAP<br>GhostConv + P2 Head + LGDH</div>
+        </div>
 
-  <!-- Mode Selector Tabs -->
-  <nav class="nav-tabs">
-    <div class="tab-btn active" id="tabCamera" onclick="switchMode('camera')">
-      📹 Live Camera
-    </div>
-    <div class="tab-btn" id="tabDemo" onclick="switchMode('demo')">
-      🎬 Benchmark Clips
-    </div>
-    <div class="tab-btn" id="tabUpload" onclick="switchMode('upload')">
-      📁 Upload Media
-    </div>
-  </nav>
-
-  <!-- Warning Banner -->
-  <div class="hud-alert-banner" id="alertBanner">
-    <div class="alert-text-group">
-      <div class="alert-icon" id="alertIcon">🟢</div>
-      <div>
-        <div class="alert-title" id="alertTitle">ROAD CLEAR</div>
-        <div class="alert-subtext" id="alertSubtext">Active preview tracking</div>
+        <div class="model-card" id="btnModelSBP" onclick="selectModel('sbp-yolo')">
+          <div class="model-badge-row">
+            <span class="model-tag">Distilled Benchmark</span>
+            <svg class="model-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+          </div>
+          <div class="model-name">SBP-YOLO</div>
+          <div class="model-meta">2.62M Params · 6.6 GFLOPs · 86.9% mAP<br>YOLO11n + LEDH (Liang et al.)</div>
+        </div>
       </div>
     </div>
-    <div class="audio-toggle" onclick="toggleAudio()">
-      <span id="audioIcon">🔊</span>
-    </div>
-  </div>
 
-  <!-- Central Viewport Display -->
-  <div class="viewport-card" id="viewportCard">
-    <video id="cameraVideo" playsinline autoplay muted></video>
-    <video id="videoPlayer" playsinline loop style="display: none;"></video>
-    <canvas id="displayCanvas"></canvas>
-    
-    <!-- Upload Dropzone Overlay -->
-    <div class="upload-dropzone" id="uploadDropzone" style="display: none;">
-      <div style="font-size: 40px; margin-bottom: 6px;">📁</div>
-      <div style="font-family: 'Chakra Petch'; font-size: 15px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">DROP OR SELECT MEDIA</div>
-      <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 16px; max-width: 280px; line-height: 1.4;">
-        Upload test road photos (JPG, PNG) or dashcam videos (MP4, MOV) to run live detection
+    <!-- Active Model Details Strip -->
+    <div class="model-info-banner" id="modelInfoStrip">
+      <span id="modelInfoText">YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params · 82.8% mAP · NMS-Free)</span>
+      <span style="font-size: 11.5px; color: var(--text-subtle);">Sub-6 ms preview latency</span>
+    </div>
+
+    <!-- Detection & Speed Parameters -->
+    <div class="controls-panel">
+      <div class="control-row">
+        <div class="control-label-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="22" y1="12" x2="18" y2="12"></line>
+            <line x1="6" y1="12" x2="2" y2="12"></line>
+            <line x1="12" y1="6" x2="12" y2="2"></line>
+            <line x1="12" y1="22" x2="12" y2="18"></line>
+          </svg>
+          <span>Confidence Threshold</span>
+        </div>
+        <div class="control-chips">
+          <button class="chip" id="sensNight" onclick="setSensitivity(0.12, this)">0.12 (Night)</button>
+          <button class="chip active" id="sensHigh" onclick="setSensitivity(0.15, this)">0.15 (Balanced)</button>
+          <button class="chip" id="sensMed" onclick="setSensitivity(0.25, this)">0.25 (Strict)</button>
+          <button class="chip" id="sensLow" onclick="setSensitivity(0.35, this)">0.35 (High-Precision)</button>
+        </div>
       </div>
-      <div style="display: flex; gap: 8px;">
-        <button class="action-btn primary" style="padding: 9px 15px; font-size: 12px;" onclick="document.getElementById('snapshotInput').click()">
-          📷 Choose Photo
+
+      <div class="control-row">
+        <div class="control-label-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+          <span>Temporal Association</span>
+        </div>
+        <div class="control-chips">
+          <button class="chip active" id="filterFast" onclick="setFilterFrames(1, this)">1 Frame (Instant Preview)</button>
+          <button class="chip" id="filterStable" onclick="setFilterFrames(2, this)">2 Frames (Noise Filtered)</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 12 16 8"></polyline>
+          </svg>
+          <span>Vehicle Ego Speed</span>
+        </div>
+        <div class="control-chips">
+          <button class="chip" id="speed40" onclick="setEgoSpeed(40, this)">40 km/h</button>
+          <button class="chip active" id="speed60" onclick="setEgoSpeed(60, this)">60 km/h</button>
+          <button class="chip" id="speed80" onclick="setEgoSpeed(80, this)">80 km/h</button>
+          <button class="chip" id="speed100" onclick="setEgoSpeed(100, this)">100 km/h</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mode Selector Tabs -->
+    <nav class="nav-tabs-wrap">
+      <div class="tab-btn active" id="tabCamera" onclick="switchMode('camera')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
+          <circle cx="12" cy="13" r="4"></circle>
+        </svg>
+        <span>Live Camera</span>
+      </div>
+      <div class="tab-btn" id="tabDemo" onclick="switchMode('demo')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+          <line x1="7" y1="2" x2="7" y2="22"></line>
+          <line x1="17" y1="2" x2="17" y2="22"></line>
+          <line x1="2" y1="12" x2="22" y2="12"></line>
+        </svg>
+        <span>Benchmark Clips</span>
+      </div>
+      <div class="tab-btn" id="tabUpload" onclick="switchMode('upload')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span>Upload Media</span>
+      </div>
+    </nav>
+
+    <!-- Hazard Alert Banner -->
+    <div class="alert-card" id="alertBanner">
+      <div class="alert-left">
+        <div class="alert-icon-box" id="alertIcon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+          </svg>
+        </div>
+        <div class="alert-info-text">
+          <div class="alert-headline" id="alertTitle">Road Clear</div>
+          <div class="alert-details" id="alertSubtext">Active preview tracking (Nominal damping state)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Viewport Container -->
+    <div class="viewport-container" id="viewportCard">
+      <div class="viewport-box">
+        <video id="cameraVideo" playsinline autoplay muted></video>
+        <video id="videoPlayer" playsinline loop style="display: none;"></video>
+        <canvas id="displayCanvas"></canvas>
+        
+        <!-- Upload Dropzone Overlay -->
+        <div class="upload-dropzone" id="uploadDropzone" style="display: none;">
+          <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="17 8 12 3 7 8"></polyline>
+            <line x1="12" y1="3" x2="12" y2="15"></line>
+          </svg>
+          <div class="dropzone-title">Drop road photos or videos here</div>
+          <div class="dropzone-desc">Supports single dashcam frames (JPG, PNG) or recorded drive sequences (MP4, MOV).</div>
+          <div class="dropzone-actions">
+            <button class="btn btn-primary" onclick="document.getElementById('snapshotInput').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                <polyline points="21 15 16 10 5 21"></polyline>
+              </svg>
+              Select Photo
+            </button>
+            <button class="btn" onclick="document.getElementById('videoFileInput').click()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+              </svg>
+              Select Video
+            </button>
+          </div>
+        </div>
+
+        <!-- Clean corner telemetry pill -->
+        <div class="viewport-telemetry">
+          <span id="fpsOverlay">0.0 FPS</span>
+          <span>·</span>
+          <span id="modelOverlay">GV-YOLO26</span>
+          <span>·</span>
+          <span id="trackOverlay">0 Tracks</span>
+        </div>
+      </div>
+
+      <!-- Action Buttons below Viewport -->
+      <div class="action-row" id="cameraControls">
+        <button class="btn btn-primary" id="btnStartCamera" style="flex: 1;" onclick="toggleCamera()">
+          <span id="btnCameraIcon">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+          </span>
+          <span id="btnCameraLabel">Start Camera</span>
         </button>
-        <button class="action-btn accent" style="padding: 9px 15px; font-size: 12px;" onclick="document.getElementById('videoFileInput').click()">
-          📼 Choose Video
+        <button class="btn" onclick="flipCamera()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+          </svg>
+          Flip Camera
         </button>
+      </div>
+
+      <div class="action-row" id="uploadControls" style="display: none;">
+        <button class="btn btn-primary" style="flex: 1;" onclick="document.getElementById('snapshotInput').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
+          Select Photo
+        </button>
+        <button class="btn" style="flex: 1;" onclick="document.getElementById('videoFileInput').click()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          Select Video
+        </button>
+        
+        <div class="action-row" id="customVideoBar" style="display: none; width: 100%;">
+          <button class="btn" id="btnPlayPauseVideo" onclick="toggleCustomVideoPlayback()" style="flex: 1;">
+            Pause Video
+          </button>
+          <button class="btn" onclick="restartCustomVideo()" style="flex: 1;">
+            Replay
+          </button>
+        </div>
+
+        <input type="file" id="snapshotInput" accept="image/*" onchange="handleSnapshot(event)">
+        <input type="file" id="videoFileInput" accept="video/*" onchange="handleCustomVideo(event)">
       </div>
     </div>
 
-    <div class="hud-crosshair"></div>
-    <div class="hud-overlay-strip">
-      <span id="fpsOverlay">FPS: 0.0</span>
-      <span id="modelOverlay">GV-YOLO26</span>
-      <span id="trackOverlay">Active Tracks: 0</span>
-    </div>
-  </div>
-
-  <!-- Control Deck -->
-  <div class="control-deck" id="cameraControls">
-    <button class="action-btn primary" id="btnStartCamera" onclick="toggleCamera()">
-      <span id="btnCameraIcon">▶</span>
-      <span id="btnCameraLabel">Start Camera</span>
-    </button>
-    <button class="action-btn" onclick="flipCamera()">
-      <span>🔄</span> Flip Camera
-    </button>
-  </div>
-
-  <div class="control-deck" id="uploadControls" style="display: none;">
-    <button class="action-btn primary" onclick="document.getElementById('snapshotInput').click()">
-      <span>📷</span> Select Photo
-    </button>
-    <button class="action-btn accent" onclick="document.getElementById('videoFileInput').click()">
-      <span>📼</span> Select Video
-    </button>
-    
-    <!-- Video playback controls (when custom video loaded) -->
-    <div class="video-control-row" id="customVideoBar" style="display: none;">
-      <button class="action-btn" id="btnPlayPauseVideo" onclick="toggleCustomVideoPlayback()" style="flex: 1;">
-        <span>⏸</span> Pause Video
-      </button>
-      <button class="action-btn" onclick="restartCustomVideo()" style="flex: 1;">
-        <span>🔄</span> Replay
-      </button>
+    <!-- Telemetry Cards -->
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Inference Speed</div>
+        <div class="metric-value" id="valFps">0.0</div>
+        <div class="metric-sub">Frames per second (FPS)</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Speed Bumps</div>
+        <div class="metric-value" id="valBumps" style="color: #16a34a;">0</div>
+        <div class="metric-sub">Detected in preview</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Potholes</div>
+        <div class="metric-value" id="valPotholes" style="color: #d97706;">0</div>
+        <div class="metric-sub">Detected in preview</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Active Suspension</div>
+        <div class="metric-value" id="valDamping" style="font-size: 15px; line-height: 1.35; color: var(--brand);">NOMINAL</div>
+        <div class="metric-sub">CAN preview command</div>
+      </div>
     </div>
 
-    <input type="file" id="snapshotInput" accept="image/*" onchange="handleSnapshot(event)">
-    <input type="file" id="videoFileInput" accept="video/*" onchange="handleCustomVideo(event)">
-  </div>
+    <!-- Benchmark Presets Section -->
+    <div>
+      <div class="section-header">
+        <span class="section-label">Validation Benchmark Scenes</span>
+      </div>
+      <div class="clips-grid" id="clipsList">
+        <!-- Loaded dynamically via /api/clips -->
+      </div>
+    </div>
 
-  <!-- Telemetry Metrics -->
-  <div class="telemetry-grid">
-    <div class="telemetry-card">
-      <div class="telemetry-label">Inference FPS</div>
-      <div class="telemetry-value" id="valFps">0.0</div>
-    </div>
-    <div class="telemetry-card">
-      <div class="telemetry-label">Speed Bumps</div>
-      <div class="telemetry-value" id="valBumps" style="color: var(--neon-green)">0</div>
-    </div>
-    <div class="telemetry-card">
-      <div class="telemetry-label">Potholes</div>
-      <div class="telemetry-value" id="valPotholes" style="color: var(--neon-orange)">0</div>
-    </div>
-  </div>
-
-  <!-- Benchmark Presets Section -->
-  <div class="section-title">
-    <span>Benchmark Test Scenes (Report)</span>
-    <span style="font-size: 11px; color: var(--neon-cyan); cursor: pointer;" onclick="resetTrackerState()">[Reset Tracker]</span>
-  </div>
-  <div class="clips-scroll" id="clipsList">
-    <!-- Populated dynamically via /api/clips -->
-  </div>
+  </main>
 
   <!-- Hidden offscreen processing canvas -->
   <canvas id="captureCanvas" width="640" height="640" style="display: none;"></canvas>
@@ -739,7 +1074,8 @@
     let currentMode = 'camera';
     let selectedModel = 'gv-yolo26';
     let currentConfThreshold = 0.15;
-    let currentConfirmFrames = 1; // Default to 1 for instant reactive detections
+    let currentConfirmFrames = 1;
+    let currentEgoSpeed = 60;
     let isCameraRunning = false;
     let cameraFacing = 'environment';
     let audioEnabled = true;
@@ -749,7 +1085,7 @@
     let lastAlertTime = 0;
     let customVideoActive = false;
 
-    // Elements
+    // DOM Elements
     const viewportCard = document.getElementById('viewportCard');
     const uploadDropzone = document.getElementById('uploadDropzone');
     const customVideoBar = document.getElementById('customVideoBar');
@@ -767,23 +1103,58 @@
     const valFps = document.getElementById('valFps');
     const valBumps = document.getElementById('valBumps');
     const valPotholes = document.getElementById('valPotholes');
+    const valDamping = document.getElementById('valDamping');
     const fpsOverlay = document.getElementById('fpsOverlay');
     const modelOverlay = document.getElementById('modelOverlay');
     const trackOverlay = document.getElementById('trackOverlay');
     const brandBadge = document.getElementById('brandBadge');
     const modelInfoText = document.getElementById('modelInfoText');
+    const audioIcon = document.getElementById('audioIcon');
 
-    // Threshold & Filter Controls
+    // SVG Icon generator for alerts
+    function renderAlertIcon(type) {
+      if (type === 'danger') {
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>`;
+      } else if (type === 'warning') {
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>`;
+      } else if (type === 'loading') {
+        return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>`;
+      }
+      return `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+      </svg>`;
+    }
+
+    // Threshold & Parameter Controls
     function setSensitivity(val, btn) {
       currentConfThreshold = val;
-      document.querySelectorAll('.sensitivity-group:first-child .chip-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#sensNight, #sensHigh, #sensMed, #sensLow').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       playSwitchTone();
     }
 
     function setFilterFrames(val, btn) {
       currentConfirmFrames = val;
-      document.querySelectorAll('.sensitivity-group:last-child .chip-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#filterFast, #filterStable').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      playSwitchTone();
+    }
+
+    function setEgoSpeed(val, btn) {
+      currentEgoSpeed = val;
+      document.querySelectorAll('[id^="speed"]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       playSwitchTone();
     }
@@ -798,23 +1169,17 @@
       document.getElementById('btnModelSBP').classList.toggle('active', modelId === 'sbp-yolo');
 
       if (modelId === 'gv-yolo26-opt') {
-        brandBadge.textContent = 'GV-YOLO26-Opt';
-        brandBadge.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
-        brandBadge.style.color = '#ffffff';
+        brandBadge.textContent = 'GV-YOLO26-Opt · 84.1%';
         modelOverlay.textContent = 'GV-YOLO26-Opt';
-        modelInfoText.textContent = '⭐ YOLO26n + C3k2 + GhostConv + P2 + LGDH (2.08M Params • 84.1% mAP)';
+        modelInfoText.textContent = 'YOLO26n + C3k2 + GhostConv + P2 + LGDH (2.08M Params · 84.1% mAP)';
       } else if (modelId === 'gv-yolo26') {
-        brandBadge.textContent = 'GV-YOLO26';
-        brandBadge.style.background = 'linear-gradient(135deg, #00f2fe, #4facfe)';
-        brandBadge.style.color = '#050b14';
+        brandBadge.textContent = 'Proposed · 82.8%';
         modelOverlay.textContent = 'GV-YOLO26';
-        modelInfoText.textContent = '⚡ YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params • 82.8% mAP • NMS-Free)';
+        modelInfoText.textContent = 'YOLO26n + VoVGSCSPC + GhostConv Backbone (2.08M Params · 82.8% mAP · NMS-Free)';
       } else {
-        brandBadge.textContent = 'SBP-YOLO';
-        brandBadge.style.background = 'linear-gradient(135deg, #10b981, #059669)';
-        brandBadge.style.color = '#ffffff';
+        brandBadge.textContent = 'Benchmark · 86.9%';
         modelOverlay.textContent = 'SBP-YOLO';
-        modelInfoText.textContent = '🏆 YOLO11n + VoVGSCSPC + GhostConv + LEDH Distilled (2.62M Params • 86.9% mAP)';
+        modelInfoText.textContent = 'YOLO11n + VoVGSCSPC + GhostConv + LEDH Distilled (2.62M Params · 86.9% mAP)';
       }
 
       playSwitchTone();
@@ -824,7 +1189,7 @@
         form.append('model_id', modelId);
         await fetch('/api/select_model', { method: 'POST', body: form });
       } catch (e) {
-        console.warn('Model select sync error:', e);
+        console.warn('Model sync error:', e);
       }
     }
 
@@ -846,14 +1211,14 @@
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(520, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(780, audioCtx.currentTime + 0.1);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(750, audioCtx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.09);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.13);
+        osc.stop(audioCtx.currentTime + 0.1);
       } catch (e) {}
     }
 
@@ -869,23 +1234,33 @@
       try {
         const osc = audioCtx.createOscillator();
         const gain = audioCtx.createGain();
-        osc.type = isSpeedBump ? 'sine' : 'triangle';
-        osc.frequency.setValueAtTime(isSpeedBump ? 880 : 660, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(isSpeedBump ? 1174 : 440, audioCtx.currentTime + 0.18);
-        gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(isSpeedBump ? 700 : 540, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(isSpeedBump ? 980 : 380, audioCtx.currentTime + 0.16);
+        gain.gain.setValueAtTime(0.18, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.22);
         osc.connect(gain);
         gain.connect(audioCtx.destination);
         osc.start();
-        osc.stop(audioCtx.currentTime + 0.26);
-      } catch (e) {
-        console.warn('Audio chime error:', e);
-      }
+        osc.stop(audioCtx.currentTime + 0.23);
+      } catch (e) {}
     }
 
     function toggleAudio() {
       audioEnabled = !audioEnabled;
-      document.getElementById('audioIcon').textContent = audioEnabled ? '🔊' : '🔇';
+      if (audioEnabled) {
+        audioIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>`;
+      } else {
+        audioIcon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M17 9a6.98 6.98 0 0 1 1.7 4.3M15.54 8.46a5 5 0 0 1 1.07 4.7"></path>
+        </svg>`;
+      }
     }
 
     // Mode Switcher
@@ -896,8 +1271,8 @@
       document.getElementById('tabDemo').classList.toggle('active', mode === 'demo');
       document.getElementById('tabUpload').classList.toggle('active', mode === 'upload');
 
-      document.getElementById('cameraControls').style.display = (mode === 'camera') ? 'grid' : 'none';
-      document.getElementById('uploadControls').style.display = (mode === 'upload') ? 'grid' : 'none';
+      document.getElementById('cameraControls').style.display = (mode === 'camera') ? 'flex' : 'none';
+      document.getElementById('uploadControls').style.display = (mode === 'upload') ? 'flex' : 'none';
 
       if (mode === 'camera') {
         videoPlayer.pause();
@@ -945,17 +1320,17 @@
         video.srcObject = cameraStream;
         await video.play();
         isCameraRunning = true;
-        document.getElementById('btnCameraIcon').textContent = '⏹';
+        document.getElementById('btnCameraIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"></rect></svg>`;
         document.getElementById('btnCameraLabel').textContent = 'Stop Camera';
-        document.getElementById('btnStartCamera').classList.remove('primary');
-        document.getElementById('btnStartCamera').classList.add('danger');
+        document.getElementById('btnStartCamera').classList.remove('btn-primary');
+        document.getElementById('btnStartCamera').classList.add('btn-danger');
 
         canvas.width = video.videoWidth || 640;
         canvas.height = video.videoHeight || 640;
         requestAnimationFrame(processCameraStream);
       } catch (err) {
         console.error('Camera access error:', err);
-        alert('Could not start live camera: ' + err.message + '\n\nTip: You can use "Select Photo" or test "Benchmark Clips".');
+        alert('Could not start live camera: ' + err.message + '\n\nYou can select a photo or play benchmark test clips.');
       }
     }
 
@@ -965,10 +1340,10 @@
         cameraStream = null;
       }
       isCameraRunning = false;
-      document.getElementById('btnCameraIcon').textContent = '▶';
+      document.getElementById('btnCameraIcon').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`;
       document.getElementById('btnCameraLabel').textContent = 'Start Camera';
-      document.getElementById('btnStartCamera').classList.add('primary');
-      document.getElementById('btnStartCamera').classList.remove('danger');
+      document.getElementById('btnStartCamera').classList.add('btn-primary');
+      document.getElementById('btnStartCamera').classList.remove('btn-danger');
     }
 
     async function flipCamera() {
@@ -996,6 +1371,7 @@
           form.append('image_base64', dataUrl);
           form.append('conf_threshold', currentConfThreshold.toString());
           form.append('confirm_frames', currentConfirmFrames.toString());
+          form.append('ego_speed_kmh', currentEgoSpeed.toString());
           form.append('model_name', selectedModel);
 
           const resp = await fetch('/api/predict_frame', {
@@ -1025,7 +1401,7 @@
       }
     }
 
-    // Live Custom Video Frame Inference Loop
+    // Custom Video Loop
     async function processCustomVideoLoop() {
       if (!customVideoActive || videoPlayer.paused || videoPlayer.ended) return;
 
@@ -1042,6 +1418,7 @@
           form.append('image_base64', dataUrl);
           form.append('conf_threshold', currentConfThreshold.toString());
           form.append('confirm_frames', currentConfirmFrames.toString());
+          form.append('ego_speed_kmh', currentEgoSpeed.toString());
           form.append('model_name', selectedModel);
 
           const resp = await fetch('/api/predict_frame', {
@@ -1074,66 +1451,83 @@
     function toggleCustomVideoPlayback() {
       if (videoPlayer.paused) {
         videoPlayer.play();
-        btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+        btnPlayPauseVideo.textContent = 'Pause Video';
         customVideoActive = true;
         requestAnimationFrame(processCustomVideoLoop);
       } else {
         videoPlayer.pause();
-        btnPlayPauseVideo.innerHTML = '<span>▶</span> Resume Video';
+        btnPlayPauseVideo.textContent = 'Resume Video';
       }
     }
 
     function restartCustomVideo() {
       videoPlayer.currentTime = 0;
       videoPlayer.play();
-      btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+      btnPlayPauseVideo.textContent = 'Pause Video';
       customVideoActive = true;
       resetTrackerState();
       requestAnimationFrame(processCustomVideoLoop);
     }
 
-    // Update HUD telemetry and alert states
+    // Telemetry and Alert Updates
     function updateHud(res) {
       valFps.textContent = res.fps.toFixed(1);
       valBumps.textContent = (res.counts && res.counts['Speed Bump']) ? res.counts['Speed Bump'] : 0;
       valPotholes.textContent = (res.counts && res.counts['Pothole']) ? res.counts['Pothole'] : 0;
-      fpsOverlay.textContent = `FPS: ${res.fps.toFixed(1)}`;
-      trackOverlay.textContent = `Tracks: ${res.detections ? res.detections.length : 0}`;
+      fpsOverlay.textContent = `${res.fps.toFixed(1)} FPS`;
+      trackOverlay.textContent = `${res.detections ? res.detections.length : 0} Tracks`;
       if (res.active_model) {
         modelOverlay.textContent = res.active_model.name;
       }
 
+      if (res.suspension) {
+        const susp = res.suspension;
+        const distStr = susp.nearest_z_m !== null ? ` (${susp.nearest_z_m}m · ${susp.nearest_tti_ms}ms)` : '';
+        valDamping.textContent = susp.damping_cmd + distStr;
+        if (susp.damping_cmd === 'PRELOAD_CRITICAL') {
+          valDamping.style.color = 'var(--danger-icon)';
+        } else if (susp.damping_cmd === 'SOFTEN_FAST') {
+          valDamping.style.color = 'var(--warning-icon)';
+        } else {
+          valDamping.style.color = 'var(--brand)';
+        }
+      }
+
       if (res.hazards_ahead && res.hazards_ahead.length > 0) {
         const isBump = res.hazards_ahead.includes('Speed Bump');
-        alertBanner.className = 'hud-alert-banner alert-danger';
-        alertIcon.textContent = '⚠️';
-        alertTitle.textContent = 'WARNING: ' + res.hazards_ahead.join(' + ').toUpperCase() + ' AHEAD';
-        alertSubtext.textContent = `Detected at ${res.latency_ms} ms (${selectedModel.toUpperCase()} | Conf >= ${currentConfThreshold})`;
+        alertBanner.className = 'alert-card alert-danger';
+        alertIcon.innerHTML = renderAlertIcon('danger');
+        alertTitle.textContent = 'Hazard Ahead: ' + res.hazards_ahead.join(' + ');
+        if (res.suspension && res.suspension.nearest_z_m !== null) {
+          alertSubtext.textContent = `[${res.suspension.damping_cmd}] Preview: ${res.suspension.nearest_z_m}m · TTI: ${res.suspension.nearest_tti_ms}ms (@ ${res.suspension.ego_speed_kmh} km/h)`;
+        } else {
+          alertSubtext.textContent = `Detected in ${res.latency_ms} ms (${selectedModel.toUpperCase()} · Conf ≥ ${currentConfThreshold})`;
+        }
         playHazardChime(isBump);
       } else {
-        alertBanner.className = 'hud-alert-banner';
-        alertIcon.textContent = '🟢';
-        alertTitle.textContent = 'ROAD CLEAR';
-        alertSubtext.textContent = `Preview tracking (Threshold: ${currentConfThreshold})`;
+        alertBanner.className = 'alert-card';
+        alertIcon.innerHTML = renderAlertIcon('clear');
+        alertTitle.textContent = 'Road Clear';
+        alertSubtext.textContent = `Preview tracking (Threshold: ${currentConfThreshold} · ${currentEgoSpeed} km/h)`;
       }
     }
 
-    // Snapshot / Photo Upload Handler
+    // Photo Upload Handler
     async function handleSnapshot(event) {
       const file = event.target.files[0];
       if (!file) return;
       uploadDropzone.style.display = 'none';
 
-      // Visual feedback
-      alertBanner.className = 'hud-alert-banner alert-warning';
-      alertIcon.textContent = '⏳';
-      alertTitle.textContent = 'ANALYZING PHOTO...';
-      alertSubtext.textContent = `Running ${selectedModel.toUpperCase()} inference (Conf >= ${currentConfThreshold})`;
+      alertBanner.className = 'alert-card alert-warning';
+      alertIcon.innerHTML = renderAlertIcon('loading');
+      alertTitle.textContent = 'Analyzing Photo...';
+      alertSubtext.textContent = `Running ${selectedModel.toUpperCase()} forward pass (Threshold ≥ ${currentConfThreshold})`;
 
       const form = new FormData();
       form.append('file', file);
       form.append('conf_threshold', currentConfThreshold.toString());
       form.append('confirm_frames', '1');
+      form.append('ego_speed_kmh', currentEgoSpeed.toString());
       form.append('model_name', selectedModel);
 
       try {
@@ -1157,15 +1551,14 @@
 
         updateHud(res);
         if (!res.alert) {
-          alertTitle.textContent = 'NO HAZARDS DETECTED';
-          alertSubtext.textContent = `Processed in ${res.latency_ms} ms at conf ${currentConfThreshold}`;
+          alertTitle.textContent = 'No Hazards Detected';
+          alertSubtext.textContent = `Inference completed in ${res.latency_ms} ms at threshold ${currentConfThreshold}`;
         }
       } catch (err) {
-        alertBanner.className = 'hud-alert-banner alert-danger';
-        alertIcon.textContent = '❌';
-        alertTitle.textContent = 'PROCESSING FAILED';
+        alertBanner.className = 'alert-card alert-danger';
+        alertIcon.innerHTML = renderAlertIcon('danger');
+        alertTitle.textContent = 'Processing Failed';
         alertSubtext.textContent = err.message;
-        console.error('Failed to process image:', err);
       } finally {
         event.target.value = '';
       }
@@ -1178,10 +1571,10 @@
       uploadDropzone.style.display = 'none';
       initAudio();
 
-      alertBanner.className = 'hud-alert-banner alert-warning';
-      alertIcon.textContent = '🎬';
-      alertTitle.textContent = 'LOADING VIDEO...';
-      alertSubtext.textContent = `Starting ${selectedModel.toUpperCase()} tracking`;
+      alertBanner.className = 'alert-card alert-warning';
+      alertIcon.innerHTML = renderAlertIcon('loading');
+      alertTitle.textContent = 'Loading Video...';
+      alertSubtext.textContent = `Initializing ${selectedModel.toUpperCase()} tracker`;
 
       const videoUrl = URL.createObjectURL(file);
       videoPlayer.src = videoUrl;
@@ -1193,7 +1586,7 @@
         await videoPlayer.play();
         customVideoActive = true;
         customVideoBar.style.display = 'flex';
-        btnPlayPauseVideo.innerHTML = '<span>⏸</span> Pause Video';
+        btnPlayPauseVideo.textContent = 'Pause Video';
         resetTrackerState();
         requestAnimationFrame(processCustomVideoLoop);
       } catch (e) {
@@ -1204,19 +1597,19 @@
       }
     }
 
-    // Drag and Drop Handling on Viewport
+    // Viewport Drag and Drop
     viewportCard.addEventListener('dragover', (e) => {
       e.preventDefault();
-      viewportCard.classList.add('dragover');
+      viewportCard.querySelector('.viewport-box').classList.add('dragover');
     });
 
     viewportCard.addEventListener('dragleave', () => {
-      viewportCard.classList.remove('dragover');
+      viewportCard.querySelector('.viewport-box').classList.remove('dragover');
     });
 
     viewportCard.addEventListener('drop', (e) => {
       e.preventDefault();
-      viewportCard.classList.remove('dragover');
+      viewportCard.querySelector('.viewport-box').classList.remove('dragover');
       if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
         const file = e.dataTransfer.files[0];
         if (file.type.startsWith('video/')) {
@@ -1227,7 +1620,7 @@
       }
     });
 
-    // Load and render Benchmark Presets
+    // Benchmark Clips
     async function loadBenchmarkClips() {
       try {
         const resp = await fetch('/api/clips');
@@ -1239,7 +1632,10 @@
           const card = document.createElement('div');
           card.className = 'clip-card' + (idx === 0 ? ' active' : '');
           card.innerHTML = `
-            <div class="clip-name">${c.name}</div>
+            <div class="clip-top">
+              <span class="clip-name">${c.name}</span>
+              <span class="clip-badge">${c.duration || '10s'}</span>
+            </div>
             <div class="clip-desc">${c.scene}</div>
           `;
           card.onclick = () => {
@@ -1260,8 +1656,8 @@
       videoPlayer.load();
       videoPlayer.play();
 
-      alertBanner.className = 'hud-alert-banner alert-warning';
-      alertIcon.textContent = '🎬';
+      alertBanner.className = 'alert-card alert-warning';
+      alertIcon.innerHTML = renderAlertIcon('warning');
       alertTitle.textContent = clip.name;
       alertSubtext.textContent = clip.scene;
     }
@@ -1269,8 +1665,9 @@
     async function resetTrackerState() {
       try {
         await fetch('/api/reset_tracker', { method: 'POST' });
-        alertTitle.textContent = 'ROAD CLEAR';
-        alertBanner.className = 'hud-alert-banner';
+        alertTitle.textContent = 'Road Clear';
+        alertBanner.className = 'alert-card';
+        alertIcon.innerHTML = renderAlertIcon('clear');
         valBumps.textContent = '0';
         valPotholes.textContent = '0';
       } catch (e) {
@@ -1278,17 +1675,17 @@
       }
     }
 
-    // Initialize on load
+    // Initial canvas setup
     window.addEventListener('DOMContentLoaded', () => {
       loadBenchmarkClips();
       canvas.width = 640;
       canvas.height = 400;
-      ctx.fillStyle = '#080c14';
+      ctx.fillStyle = '#0f172a';
       ctx.fillRect(0, 0, 640, 400);
-      ctx.fillStyle = '#475569';
-      ctx.font = '14px Inter';
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '500 13px Inter, sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('Tap "Start Camera", choose a "Benchmark Clip", or "Upload Media"', 320, 200);
+      ctx.fillText('Select "Start Camera", choose a Benchmark Scene, or upload road media', 320, 200);
     });
   </script>
 </body>

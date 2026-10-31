@@ -1,0 +1,46 @@
+# GV-YOLO26-P2P3: P2-to-P3 SPD-Conv Feature Injection Architecture
+# Folds high-resolution P2 (160x160) sub-32px details directly into P3 (80x80) via SPDConv.
+# Retains standard 3-scale detection (P3, P4, P5 = 8,400 anchors) for clean NMS-free one-to-one matching.
+# Uses GhostConv + VoVGSCSPC in P3/P4 while preserving full C3k2 capacity at P5 for wide speed bumps.
+
+nc: 2 # speed bump, pothole
+end2end: True # one-to-one head, NMS-free inference
+reg_max: 1 # no DFL
+scales: # [depth, width, max_channels]
+  n: [0.50, 0.25, 1024]
+  s: [0.50, 0.50, 1024]
+
+backbone:
+  # [from, repeats, module, args]
+  - [-1, 1, Conv, [64, 3, 2]] # 0-P1/2 (320x320)
+  - [-1, 1, Conv, [128, 3, 2]] # 1-P2/4 (160x160)
+  - [-1, 2, C3k2, [256, False, 0.25]] # 2: Stage 2 (P2/4, 160x160)
+  - [-1, 1, Conv, [256, 3, 2]] # 3-P3/8 (80x80)
+  - [-1, 2, C3k2, [512, False, 0.25]] # 4: Stage 3 (P3/8, 80x80)
+  - [-1, 1, GhostConv, [512, 3, 2]] # 5-P4/16 (40x40)
+  - [-1, 2, VoVGSCSPC, [512]] # 6: Stage 4 (P4/16, 40x40)
+  - [-1, 1, GhostConv, [1024, 3, 2]] # 7-P5/32 (20x20)
+  - [-1, 2, C3k2, [1024, True]] # 8: Stage 5 (P5/32, 20x20) - Preserved C3k2 capacity for wide bumps
+  - [-1, 1, SPPF, [1024, 5, 3, True]] # 9
+  - [-1, 2, C2PSA, [1024]] # 10
+
+head:
+  # top-down path
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 11 (40x40)
+  - [[-1, 6], 1, Concat, [1]] # 12: cat backbone P4
+  - [-1, 2, VoVGSCSPC, [512]] # 13: P4 feature mixing
+  - [-1, 1, nn.Upsample, [None, 2, "nearest"]] # 14 (80x80)
+  - [2, 1, SPDConv, [256]] # 15: SPDConv lossless spatial-to-channel injection from P2 (160x160 -> 80x80)
+  - [[-1, 14, 4], 1, Concat, [1]] # 16: cat SPD(P2), upsampled P4, and backbone P3
+  - [-1, 2, C3k2, [256, True]] # 17 (P3/8-small, 80x80)
+
+  # bottom-up path
+  - [-1, 1, Conv, [256, 3, 2]] # 18 (40x40)
+  - [[-1, 13], 1, Concat, [1]] # 19: cat head P4
+  - [-1, 2, VoVGSCSPC, [512]] # 20 (P4/16-medium, 40x40)
+  - [-1, 1, GhostConv, [512, 3, 2]] # 21 (20x20)
+  - [[-1, 10], 1, Concat, [1]] # 22: cat head P5
+  - [-1, 1, C3k2, [1024, True, 0.5, True]] # 23 (P5/32-large, 20x20)
+
+  # 3-scale detection head: P3, P4, P5 (8,400 anchors total)
+  - [[17, 20, 23], 1, LGDH, [nc]] # 24 (P3, P4, P5)

@@ -49,9 +49,11 @@ class NWDDetectionLoss(v8DetectionLoss):
         self.bbox_loss = NWDBboxLoss(self.reg_max, self.alpha).to(self.device)
 
 
-def bckd_loss(s, t, stride):
+def bckd_loss(s, t, stride, alpha=0.5):
     """Classification and localisation distillation on the head outputs (BCKD style).
 
+    Guarantees coordinate positivity before dist2bbox decoding and bounds regression loss
+    with hybrid clamped CIoU and Normalized Wasserstein Distance (NWD).
     s, t: one-to-many prediction dicts of the student and teacher ({"boxes", "scores", "feats"}).
     """
     t_prob = t["scores"].float().sigmoid()
@@ -60,11 +62,17 @@ def bckd_loss(s, t, stride):
     cls = (F.binary_cross_entropy_with_logits(s_logit, t_prob, reduction="none") * w).sum()
     cls = cls / t_prob.sum().clamp(min=1)
 
-    anchors, _ = make_anchors(s["feats"], stride, 0.5)
-    sb = dist2bbox(s["boxes"].float().permute(0, 2, 1), anchors, xywh=False)
-    tb = dist2bbox(t["boxes"].float().permute(0, 2, 1), anchors, xywh=False)
+    anchors, stride_tensor = make_anchors(s["feats"], stride, 0.5)
 
-    # Prevent inverted or negative student/teacher boxes from causing GIoU explosion
+    # 1. Coordinate Positivity Clamping: project raw distances via softplus + clamp
+    # to guarantee positive distances from anchor centers: w = lt_x + rb_x > 0, h = lt_y + rb_y > 0
+    s_dist = F.softplus(s["boxes"].float().permute(0, 2, 1), beta=1.0).clamp(min=1e-4)
+    t_dist = F.softplus(t["boxes"].float().permute(0, 2, 1), beta=1.0).clamp(min=1e-4)
+
+    sb = dist2bbox(s_dist, anchors, xywh=False)
+    tb = dist2bbox(t_dist, anchors, xywh=False)
+
+    # 2. Strict coordinate ordering: guarantee x2 > x1 and y2 > y1
     sb_x1 = torch.min(sb[..., 0], sb[..., 2])
     sb_y1 = torch.min(sb[..., 1], sb[..., 3])
     sb_x2 = torch.max(sb[..., 0], sb[..., 2]).clamp(min=sb_x1 + 1e-2)
@@ -77,11 +85,29 @@ def bckd_loss(s, t, stride):
     tb_y2 = torch.max(tb[..., 1], tb[..., 3]).clamp(min=tb_y1 + 1e-2)
     tb_clamped = torch.stack([tb_x1, tb_y1, tb_x2, tb_y2], dim=-1)
 
-    wt = t_prob.max(1)[0]  # teacher confidence per location
-    mask = wt > 0.25  # distill bounding box targets only on confident teacher detections
+    # 3. Teacher foreground masking: distill coordinates only on confident teacher predictions
+    if t_prob.shape[1] == anchors.shape[0]:  # (bs, anchors, nc)
+        wt = t_prob.max(dim=-1)[0]
+    else:  # (bs, nc, anchors)
+        wt = t_prob.max(dim=1)[0]
+
+    mask = wt > 0.25
     if mask.any():
+        # Bounded CIoU in [-1.0, 1.0], giving (1.0 - ciou) in [0.0, 2.0]
         ciou = bbox_iou(sb_clamped[mask], tb_clamped[mask], xywh=False, CIoU=True).squeeze(-1).clamp(min=-1.0, max=1.0)
-        box = ((1.0 - ciou) * wt[mask]).sum() / wt[mask].sum().clamp(min=1)
+        loss_iou = 1.0 - ciou
+
+        # Bounded Normalized Wasserstein Distance in pixel coordinates: L_NWD in [0.0, 1.0)
+        st = stride_tensor.squeeze(-1) if stride_tensor.dim() > 1 else stride_tensor
+        if mask.dim() == 2:
+            st = st.unsqueeze(0).expand(mask.shape[0], -1)
+        s_stride_mask = st[mask].unsqueeze(-1)
+        sim_nwd = nwd(sb_clamped[mask] * s_stride_mask, tb_clamped[mask] * s_stride_mask)
+        loss_nwd = 1.0 - sim_nwd.clamp(min=1e-7, max=1.0)
+
+        # Hybrid bounded box distillation loss
+        loss_box_distill = (1.0 - alpha) * loss_iou + alpha * loss_nwd
+        box = (loss_box_distill * wt[mask]).sum() / wt[mask].sum().clamp(min=1)
     else:
         box = torch.zeros((), device=sb.device)
     return cls + box

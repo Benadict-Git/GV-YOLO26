@@ -14,7 +14,7 @@ import argparse
 
 import gv_modules  # noqa: F401  registers the GV-YOLO26 layers
 from gv_modules import GVTrainer, NWDDetectionLoss, NWDTrainer
-from gv_modules.augment import weather_augmentations
+from gv_modules.augment import combined_edge_augmentations, dusk_augmentations, weather_augmentations
 from ultralytics import YOLO
 
 
@@ -26,6 +26,8 @@ def parse_args():
     p.add_argument("--nwd", action="store_true", help="use the IoU + NWD box loss (stage 6)")
     p.add_argument("--alpha", type=float, default=0.70, help="IoU weight in the box loss (equation 4.4)")
     p.add_argument("--no-weather", action="store_true", help="disable rain/snow/blur/colour augmentation")
+    p.add_argument("--dusk", action="store_true", help="enable dusk, shadow, and low-contrast edge-case augmentation")
+    p.add_argument("--all-aug", action="store_true", help="combine both weather and dusk edge-case augmentations")
     p.add_argument("--epochs", type=int, default=150)
     p.add_argument("--patience", type=int, default=30)
     p.add_argument("--batch", type=int, default=16)
@@ -45,7 +47,14 @@ def main(opt):
     model = YOLO(opt.cfg, task="detect")
     if opt.weights:
         model.load(opt.weights)  # transfers only the layers whose names and shapes match
-    extra = {} if opt.no_weather else {"augmentations": weather_augmentations()}
+    if opt.no_weather:
+        extra = {}
+    elif opt.all_aug:
+        extra = {"augmentations": combined_edge_augmentations()}
+    elif opt.dusk:
+        extra = {"augmentations": dusk_augmentations()}
+    else:
+        extra = {"augmentations": weather_augmentations()}
     model.train(
         trainer=NWDTrainer if opt.nwd else GVTrainer,
         data=opt.data,

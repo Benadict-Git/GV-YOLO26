@@ -14,6 +14,7 @@ kaggle_jobs
 # Datasets and large raw media
 datasets/
 video/
+results/
 *.tar.gz
 *.zip
 
@@ -42,6 +43,13 @@ report_build/backup/
 claudesession.txt
 fix_residual_report_data.py
 update_report.py
+GV_YOLO26_Project_Report-*_*.jpg
+GV_YOLO26_Project_Report01.docx
+*_BACKUP.*
+test_bonafide*
+test_no_p253.*
+bonafide_*
+crop_sig_user.png
 
 # OS / Editor
 .DS_Store

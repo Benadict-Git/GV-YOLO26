@@ -48,3 +48,21 @@ class VoVGSCSPC(nn.Module):
 
     def forward(self, x):
         return self.cv3(torch.cat((self.cv2(x), self.gsb(self.cv1(x))), 1))
+
+
+class SPDConv(nn.Module):
+    """Space-to-Depth Convolution: lossless spatial-to-channel downsampling followed by 1x1 Conv."""
+
+    def __init__(self, c1, c2, scale=2, act=True):
+        super().__init__()
+        self.scale = scale
+        self.conv = Conv(c1 * (scale ** 2), c2, 1, 1, act=act)
+
+    def forward(self, x):
+        sub_maps = [
+            x[..., i::self.scale, j::self.scale]
+            for i in range(self.scale)
+            for j in range(self.scale)
+        ]
+        return self.conv(torch.cat(sub_maps, dim=1))
+

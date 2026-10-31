@@ -10,7 +10,7 @@ import inspect
 import ultralytics
 import ultralytics.nn.tasks as tasks
 
-from .blocks import GSConv, VoVGSCSPC
+from .blocks import GSConv, SPDConv, VoVGSCSPC
 from .head import LGDH
 
 TESTED_VERSION = "8.4.156"
@@ -28,7 +28,7 @@ def _patch_source(src):
                 f"gv_modules: Ultralytics {ultralytics.__version__} is not supported "
                 f"(parse_model layout changed; tested with {TESTED_VERSION})."
             )
-    src = src.replace(base_end, base_end.replace("A2C2f,\n", "A2C2f,\n            GSConv,\n            VoVGSCSPC,\n"))
+    src = src.replace(base_end, base_end.replace("A2C2f,\n", "A2C2f,\n            GSConv,\n            VoVGSCSPC,\n            SPDConv,\n"))
     src = src.replace(repeat_end, repeat_end.replace("A2C2f,\n", "A2C2f,\n            VoVGSCSPC,\n"))
     src = src.replace(detect_end, detect_end.replace("OBB26,\n", "OBB26,\n                LGDH,\n"))
     return src
@@ -37,7 +37,7 @@ def _patch_source(src):
 def register():
     if getattr(tasks, "_gv_registered", False):
         return
-    for name, obj in {"GSConv": GSConv, "VoVGSCSPC": VoVGSCSPC, "LGDH": LGDH}.items():
+    for name, obj in {"GSConv": GSConv, "VoVGSCSPC": VoVGSCSPC, "LGDH": LGDH, "SPDConv": SPDConv}.items():
         setattr(tasks, name, obj)  # parse_model resolves layer names through the tasks module globals
     src = _patch_source(inspect.getsource(tasks.parse_model))
     exec(compile(src, tasks.__file__, "exec"), tasks.__dict__)

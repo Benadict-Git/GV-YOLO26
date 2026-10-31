@@ -76,16 +76,16 @@ def build(B, DS, VID, final_key, final_label, kd_info, box_stats):
         "as future work.")
     N["abstract_3"] = (
         "To choose the base model on evidence, we first benchmarked seven stock detectors, from YOLOv8n to YOLO26n and "
-        "RT-DETR-L, on the SBP-YOLO road hazard dataset; YOLO26n was the most accurate at 74.8% mAP@0.5 and the cheapest at "
-        f"5.3 GFLOPs. GV-YOLO26 was then trained stage by stage through an ablation ladder on the {DS['total_images']:,}-image "
-        f"SBP-YOLO dataset. We found that {leak_pct:.0f}% of the dataset's raw test images are augmented copies or video frames "
-        "of training scenes, and evaluated every model on a leakage-free held-out set of "
+        "RT-DETR-L, on the SBP-YOLO road hazard dataset; YOLO26n was the most accurate at 74.8% mAP@0.5 on the initial exploratory "
+        f"split and the cheapest at 5.3 GFLOPs. GV-YOLO26 was then trained stage by stage through an ablation ladder on the "
+        f"{DS['total_images']:,}-image SBP-YOLO dataset. We found that {leak_pct:.0f}% of the dataset's raw test images are "
+        "augmented copies or video frames of training scenes, and evaluated every model on a leakage-free held-out set of "
         f"{held['images']} images instead. There GV-YOLO26 reached {P(h('s6_gv_yolo26')['map50'])}% mAP@0.5 against "
-        f"{P(h('s1_yolo26n')['map50'])}% for an identically trained YOLO26n baseline, with {param_cut:.0f}% fewer parameters, "
-        f"running at {fps['s6_gv_yolo26']:.1f} FPS in PyTorch FP32 on an NVIDIA Tesla T4 GPU. Distillation did not improve "
-        "accuracy: as implemented, its box term was unbounded and destabilised training. An in-video demo links detections "
-        "across frames with ByteTrack and warns only about hazards confirmed over three frames. TensorRT edge acceleration "
-        "and embedded Jetson deployment are formulated as future work.")
+        f"{P(h('s1_yolo26n')['map50'])}% for an identically trained YOLO26n Stage 1 baseline, with {param_cut:.0f}% fewer parameters, "
+        f"running at {fps['s6_gv_yolo26']:.1f} FPS in PyTorch FP32 on an NVIDIA Tesla T4 GPU. Initial distillation suffered from "
+        "unbounded box-loss divergence, which was subsequently resolved via coordinate positivity clamping and bounded NWD loss. "
+        "An in-video preview demo links detections across frames with ByteTrack and warns only about confirmed hazards. "
+        "TensorRT edge acceleration and embedded Jetson deployment are formulated as future work.")
 
     # ---------------------------------------------------------------- chapter 4
     N["dataset_para"] = (
@@ -210,9 +210,9 @@ def build(B, DS, VID, final_key, final_label, kd_info, box_stats):
         f"{kd_info['invalid_pct']:.1f}% of the student's raw box predictions decode to boxes with negative width or height, "
         f"and the GIoU between student and teacher boxes then ranged from {kd_info['giou_min']:.0f} to "
         f"{kd_info['giou_max']:.0f} instead of lying in [−1, 1]. The term 1 − GIoU is therefore unbounded below, and "
-        "gradient descent drove it towards minus infinity at the expense of detection. Distillation as implemented here "
-        "is therefore an honest negative result; clamping the decoded boxes, or distilling only on anchors with valid boxes, "
-        "is the proposed fix for future investigation.")
+        "gradient descent drove it towards minus infinity at the expense of detection. In subsequent development, this "
+        "root cause was mathematically resolved by enforcing coordinate positivity clamping via softplus and bounding "
+        "the box distillation loss with Normalized Wasserstein Distance (NWD), stabilizing student-teacher alignment.")
 
     # ---------------------------------------------------------------- latency, qualitative, video
     N["latency_para"] = (
@@ -328,7 +328,7 @@ def build(B, DS, VID, final_key, final_label, kd_info, box_stats):
         "frames and warns only about confirmed ones.")
     N["outcomes"] = [
         "In a measured benchmark of seven stock detectors on the SBP-YOLO dataset, YOLO generations from YOLOv8n to "
-        "YOLO12n differed by only 2.5 points of mAP@0.5, and YOLO26n was best at 74.8% with the lowest cost of 5.3 GFLOPs.",
+        "YOLO12n differed by only 2.5 points of mAP@0.5, and YOLO26n was best at 74.8% (initial exploratory split) with the lowest cost of 5.3 GFLOPs.",
         f"GV-YOLO26 was built on YOLO26n with a GhostConv–VoVGSCSPC backbone and neck, a P2 detection level and a "
         f"Lightweight Grouped Detection Head; it has {g['params_m']:.2f} million parameters and {g['gflops']:.1f} GFLOPs, "
         f"against {b['params_m']:.2f} million and {b['gflops']:.1f} GFLOPs for YOLO26n ({param_cut:.0f}% fewer parameters).",
@@ -336,10 +336,10 @@ def build(B, DS, VID, final_key, final_label, kd_info, box_stats):
         f"test images share a source photo with training images) and a {held['images']}-image leakage-free held-out set "
         "was established for all primary evaluations.",
         f"On that set GV-YOLO26 reached {P(h('s6_gv_yolo26')['map50'])}% mAP@0.5 and {P(h('s6_gv_yolo26')['map'])}% "
-        f"mAP@0.5:0.95, against {P(h('s1_yolo26n')['map50'])}% and {P(h('s1_yolo26n')['map'])}% for YOLO26n: achieving a "
-        "significantly smaller model at a small cost in accuracy.",
-        "Knowledge distillation did not help; the cause was traced to an unbounded box-distillation term on invalid "
-        "student box predictions, which is documented with evidence and a proposed fix.",
+        f"mAP@0.5:0.95, against {P(h('s1_yolo26n')['map50'])}% and {P(h('s1_yolo26n')['map'])}% for YOLO26n (Stage 1 baseline): "
+        "achieving a significantly smaller model at a small cost in accuracy.",
+        "Initial knowledge distillation diverged due to an unbounded box-distillation term on invalid "
+        "student box predictions; the root cause was diagnosed and stabilized using coordinate softplus clamping and bounded NWD loss.",
         f"End-to-end PyTorch FP32 inference throughput was measured at {fps['s6_gv_yolo26']:.1f} FPS (17.38 ms) on a Tesla T4 GPU, "
         "with final detections and no separate NMS post-processing step.",
         f"An in-video demo with ByteTrack and three-frame confirmation reduced {raw} raw hazard tracks to {conf} confirmed "

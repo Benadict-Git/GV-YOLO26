@@ -18,6 +18,8 @@ STAGES = [
     ("3 + LGDH", ROOT / "models/ablation/gv-yolo26n-p2-lgdh.yaml"),
     ("4 + GhostConv", ROOT / "models/ablation/gv-yolo26n-p2-lgdh-ghost.yaml"),
     ("5 + VoVGSCSPC (GV-YOLO26)", ROOT / "models/gv-yolo26n.yaml"),
+    ("hybrid P2-P3 SPD (GV-YOLO26-P2P3)", ROOT / "models/gv-yolo26-p2p3.yaml"),
+    ("GV-YOLO26-X", ROOT / "models/gv-yolo26-x.yaml"),
     ("teacher GV-YOLO26-S", ROOT / "models/gv-yolo26s.yaml"),
 ]
 

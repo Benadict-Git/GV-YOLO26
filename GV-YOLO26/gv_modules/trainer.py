@@ -33,6 +33,18 @@ class DistillTrainer(NWDTrainer):
     """NWDTrainer that adds BCKD + CWD distillation from a frozen teacher. Set `teacher` before training."""
 
     teacher = None  # path to the trained teacher checkpoint (e.g. GV-YOLO26 at S scale)
+    distill_warmup_epochs = 3.0
+
+    def preprocess_batch(self, batch):
+        batch = super().preprocess_batch(batch)
+        if hasattr(self, "train_loader") and len(self.train_loader) > 0:
+            total_steps = max(1.0, float(self.distill_warmup_epochs * len(self.train_loader)))
+            ni = getattr(self, "ni", 0)
+            _KD["warmup_factor"] = min(1.0, max(0.01, float(ni + 1) / total_steps))
+        else:
+            cur_epoch = getattr(self, "epoch", 0)
+            _KD["warmup_factor"] = min(1.0, max(0.01, float(cur_epoch + 1) / max(1.0, float(self.distill_warmup_epochs))))
+        return batch
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         model = super().get_model(cfg, weights, verbose)

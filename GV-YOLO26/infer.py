@@ -24,11 +24,37 @@ def parse_args():
     p.add_argument("--imgsz", type=int, default=640)
     p.add_argument("--out", default="results")
     p.add_argument("--nms", action="store_true", help="use the one-to-many head + NMS instead of the NMS-free head")
+    p.add_argument("--use-openvino", action="store_true", help="use OpenVINO IR model for CPU acceleration if available")
+    p.add_argument("--export-openvino", action="store_true", help="export weights to OpenVINO format")
     return p.parse_args()
 
 
 def main(opt):
-    model = YOLO(opt.weights)
+    weights_path = Path(opt.weights)
+    if opt.export_openvino:
+        try:
+            import openvino  # noqa: F401
+            m = YOLO(opt.weights)
+            m.export(format="openvino", half=True)
+            print(f"Exported OpenVINO model from {opt.weights}")
+        except ImportError:
+            print("Warning: openvino package not installed. Skipping OpenVINO export.")
+
+    if opt.use_openvino:
+        ov_dir = weights_path.parent / (weights_path.stem + "_openvino_model")
+        if ov_dir.exists():
+            try:
+                import openvino  # noqa: F401
+                model = YOLO(str(ov_dir))
+                print(f"Loaded OpenVINO model from {ov_dir}")
+            except ImportError:
+                print("Warning: openvino package not installed. Falling back to PyTorch weights.")
+                model = YOLO(opt.weights)
+        else:
+            print(f"OpenVINO model not found at {ov_dir}. Falling back to PyTorch weights.")
+            model = YOLO(opt.weights)
+    else:
+        model = YOLO(opt.weights)
     nms = None if opt.nms else False
     src = Path(opt.source)
     if src.suffix.lower() in VIDEO:

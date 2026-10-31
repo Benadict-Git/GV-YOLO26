@@ -8,7 +8,7 @@ from ultralytics.utils.loss import E2ELoss, v8DetectionLoss
 from .loss import NWDDetectionLoss, bckd_loss, cwd_loss
 
 # The teacher lives here rather than on the model, so it is never deep-copied into the EMA or pickled into checkpoints.
-_KD = {"teacher": None, "weight_bckd": 0.5, "weight_cwd": 0.5}
+_KD = {"teacher": None, "weight_bckd": 0.5, "weight_cwd": 0.5, "alpha": 0.5, "warmup_factor": 1.0}
 
 
 class GVDetectionModel(DetectionModel):
@@ -36,8 +36,11 @@ class GVDetectionModel(DetectionModel):
             with torch.no_grad():
                 t = teacher(batch["img"])[1]  # teacher runs in eval mode: (y, preds)
                 t = t["one2many"] if "one2many" in t else t
-            kd = _KD["weight_bckd"] * bckd_loss(s, t, self.stride) + _KD["weight_cwd"] * cwd_loss(
-                s["feats"], t["feats"], self.kd_adapters
+            warmup = _KD.get("warmup_factor", 1.0)
+            alpha_bckd = _KD.get("alpha", 0.5)
+            kd = warmup * (
+                _KD["weight_bckd"] * bckd_loss(s, t, self.stride, alpha=alpha_bckd)
+                + _KD["weight_cwd"] * cwd_loss(s["feats"], t["feats"], self.kd_adapters)
             )
             loss = torch.cat([loss, (kd * batch["img"].shape[0]).view(1).to(loss.dtype)])
         items = {**items, "kd_loss": kd.detach()}  # same keys in training and validation

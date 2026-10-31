@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1850" viewBox="0 0 1200 1850">
+  <defs>
+    <filter id="clean-shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#0f172a" flood-opacity="0.06"/>
+    </filter>
+    <filter id="pill-shadow-b" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="3" stdDeviation="3" flood-color="#2563eb" flood-opacity="0.2"/>
+    </filter>
+    
+    <linearGradient id="pill-blue" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+
+    <marker id="arrow-clean" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#334155"/>
+    </marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#ffffff"/>
+
+  <!-- START Terminal Node -->
+  <rect x="475" y="40" width="250" height="56" rx="28" fill="url(#pill-blue)" filter="url(#pill-shadow-b)"/>
+  <text x="600" y="76" font-family="'DejaVu Sans', Arial, sans-serif" font-size="19" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="1">Start</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="96" x2="600" y2="148" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 1 -->
+  <rect x="150" y="153" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="206" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Review literature on bump and pothole detection</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="241" x2="600" y2="293" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 2 -->
+  <rect x="150" y="298" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="351" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Train seven stock baselines on public dataset (fixed protocol)</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="386" x2="600" y2="438" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 3 -->
+  <rect x="150" y="443" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="496" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Evaluate baselines on held-out test split</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="531" x2="600" y2="583" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 4 -->
+  <rect x="150" y="588" width="900" height="98" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="632" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Select YOLO26n as base</text>
+  <text x="600" y="660" font-family="'DejaVu Sans', Arial, sans-serif" font-size="16" font-weight="normal" fill="#475569" text-anchor="middle">(most accurate, lowest cost)</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="686" x2="600" y2="738" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 5 (GV-YOLO26) -->
+  <rect x="130" y="743" width="940" height="106" rx="12" fill="#f8fafc" stroke="#2563eb" stroke-width="2.4" filter="url(#clean-shadow)"/>
+  <text x="600" y="788" font-family="'DejaVu Sans', Arial, sans-serif" font-size="19" font-weight="bold" fill="#1e293b" text-anchor="middle">Design GV-YOLO26: GhostConv, VoVGSCSPC, P2 level, LGDH</text>
+  <text x="600" y="818" font-family="'DejaVu Sans', Arial, sans-serif" font-size="15" font-weight="600" fill="#2563eb" text-anchor="middle">160×160 High-Resolution Grid  •  Grouped Shared Heads  •  NMS-Free</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="849" x2="600" y2="901" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 6 -->
+  <rect x="150" y="906" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="959" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Train each design stage with NWD loss and augmentation</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="994" x2="600" y2="1046" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 7 -->
+  <rect x="150" y="1051" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="1104" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Distil from GV-YOLO26-S teacher (BCKD + CWD)</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="1139" x2="600" y2="1191" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 8 -->
+  <rect x="150" y="1196" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="1249" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Evaluate ablation stages and compare with baselines</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="1284" x2="600" y2="1336" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- Box 9 -->
+  <rect x="150" y="1341" width="900" height="88" rx="10" fill="#ffffff" stroke="#334155" stroke-width="2" filter="url(#clean-shadow)"/>
+  <text x="600" y="1394" font-family="'DejaVu Sans', Arial, sans-serif" font-size="18" font-weight="500" fill="#0f172a" text-anchor="middle">Export to TensorRT and run on road images and video</text>
+
+  <!-- Arrow -->
+  <line x1="600" y1="1429" x2="600" y2="1481" stroke="#334155" stroke-width="2.2" marker-end="url(#arrow-clean)"/>
+
+  <!-- END Terminal Node -->
+  <rect x="475" y="1486" width="250" height="56" rx="28" fill="#1e293b" filter="url(#clean-shadow)"/>
+  <text x="600" y="1522" font-family="'DejaVu Sans', Arial, sans-serif" font-size="19" font-weight="bold" fill="#ffffff" text-anchor="middle" letter-spacing="1">End</text>
+
+</svg>

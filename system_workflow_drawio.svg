@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 760" width="820" height="760">
+
+    <defs>
+      <!-- Draw.io black arrowhead -->
+      <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#000000" />
+      </marker>
+    </defs>
+    
+    <style>
+      text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+      .capsule-text { font-size: 14px; font-weight: 700; dominant-baseline: central; text-anchor: middle; fill: #000000; }
+      .step-title { font-size: 13.5px; font-weight: 700; dominant-baseline: central; text-anchor: middle; fill: #000000; }
+      .step-sub { font-size: 11px; font-weight: 400; fill: #262626; dominant-baseline: central; text-anchor: middle; }
+      .diamond-title { font-size: 12.5px; font-weight: 700; dominant-baseline: central; text-anchor: middle; fill: #000000; }
+      .diamond-sub { font-size: 10.5px; font-weight: 500; dominant-baseline: central; text-anchor: middle; fill: #333333; }
+      .conn-label { font-size: 10px; font-weight: 700; dominant-baseline: central; text-anchor: middle; fill: #000000; }
+    </style>
+    
+<rect width="820" height="760" fill="#FFFFFF" />
+
+    <!-- START CAPSULE -->
+    <g transform="translate(335, 26)">
+      <rect x="0" y="0" width="150" height="36" rx="18" ry="18" fill="#FFFFFF" stroke="#000000" stroke-width="2" />
+      <text x="75" y="18" class="capsule-text">Start</text>
+    </g>
+    
+
+    <line x1="410" y1="62" x2="410" y2="86" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+    
+
+        <!-- STEP 1 -->
+        <g id="step-1" transform="translate(170, 86)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">1. Video Frame Acquisition</text>
+          <text x="240" y="38" class="step-sub">Capture live road video stream from front-facing vehicle camera</text>
+        </g>
+        
+
+            <line x1="410" y1="142" x2="410" y2="166" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+            
+
+        <!-- STEP 2 -->
+        <g id="step-2" transform="translate(170, 166)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">2. Image Preprocessing</text>
+          <text x="240" y="38" class="step-sub">Resize frames to 640×640 and enhance road surface visibility</text>
+        </g>
+        
+
+            <line x1="410" y1="222" x2="410" y2="246" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+            
+
+        <!-- STEP 3 -->
+        <g id="step-3" transform="translate(170, 246)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">3. Road Hazard Detection (GV-YOLO26)</text>
+          <text x="240" y="38" class="step-sub">Detect speed bumps and potholes in real time with bounding boxes</text>
+        </g>
+        
+
+            <line x1="410" y1="302" x2="410" y2="326" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+            
+
+        <!-- STEP 4 -->
+        <g id="step-4" transform="translate(170, 326)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">4. Hazard Tracking &amp; Temporal Verification</text>
+          <text x="240" y="38" class="step-sub">Track detected objects across consecutive frames to filter out false alarms</text>
+        </g>
+        
+
+    <line x1="410" y1="382" x2="410" y2="408" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+    
+
+    <!-- DECISION DIAMOND: Hazard Confirmation -->
+    <g id="decision-diamond" transform="translate(410, 445)">
+      <polygon points="0,-37 140,0 0,37 -140,0" fill="#FFFFFF" stroke="#000000" stroke-width="1.8" />
+      <text y="-8" class="diamond-title">Hazard Confirmed?</text>
+      <text y="10" class="diamond-sub">(Seen in ≥ 3 Frames)</text>
+    </g>
+    
+
+    <!-- NO FEEDBACK LOOP: Suppress False Alarms -->
+    <g id="feedback-loop">
+      <!-- Path routing: Diamond right vertex -> loop_x -> Step 1 mid_y -> Step 1 right edge -->
+      <path d="M 550 445 L 720 445 L 720 114 L 650 114" fill="none" stroke="#000000" stroke-width="1.6" stroke-dasharray="5,4" stroke-linejoin="round" marker-end="url(#arrow)" />
+      
+      <!-- 'No' label cleanly placed on horizontal line -->
+      <g transform="translate(562, 434)">
+        <rect x="0" y="0" width="160" height="22" rx="4" fill="#FFFFFF" stroke="#000000" stroke-width="1" />
+        <text x="80" y="11" class="conn-label">No (Ignore False Alarm)</text>
+      </g>
+    </g>
+    
+
+    <!-- YES CONNECTOR -->
+    <line x1="410" y1="482" x2="410" y2="518" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+    
+    <!-- 'Yes' label pill placed cleanly in the gap between Diamond and Step 5 -->
+    <g transform="translate(424, 489)">
+      <rect x="0" y="0" width="150" height="22" rx="4" fill="#FFFFFF" stroke="#000000" stroke-width="1" />
+      <text x="75" y="11" class="conn-label">Yes (Hazard Verified)</text>
+    </g>
+    
+
+        <!-- STEP 5 -->
+        <g id="step-5" transform="translate(170, 518)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">5. Distance &amp; Time-to-Impact Estimation</text>
+          <text x="240" y="38" class="step-sub">Calculate longitudinal distance to hazard and estimated vehicle arrival time</text>
+        </g>
+        
+
+            <line x1="410" y1="574" x2="410" y2="598" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+            
+
+        <!-- STEP 6 -->
+        <g id="step-6" transform="translate(170, 598)">
+          <rect x="0" y="0" width="480" height="56" rx="6" fill="#FFFFFF" stroke="#000000" stroke-width="1.6" />
+          <text x="240" y="19" class="step-title">6. Driver Warning &amp; Suspension Control</text>
+          <text x="240" y="38" class="step-sub">Display visual HUD alert, sound buzzer, and adjust suspension damping</text>
+        </g>
+        
+
+    <line x1="410" y1="654" x2="410" y2="684" stroke="#000000" stroke-width="1.8" marker-end="url(#arrow)" />
+    
+
+    <!-- END CAPSULE -->
+    <g transform="translate(335, 684)">
+      <rect x="0" y="0" width="150" height="36" rx="18" ry="18" fill="#FFFFFF" stroke="#000000" stroke-width="2" />
+      <text x="75" y="18" class="capsule-text">End</text>
+    </g>
+    
+</svg>

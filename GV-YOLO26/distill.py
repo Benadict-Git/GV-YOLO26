@@ -31,6 +31,7 @@ def parse_args():
     p.add_argument("--optimizer", default="auto")
     p.add_argument("--lr0", type=float, default=0.01, help="initial learning rate (ignored by optimizer=auto)")
     p.add_argument("--warmup-epochs", type=float, default=3.0)
+    p.add_argument("--distill-warmup-epochs", type=float, default=3.0, help="linear warmup epochs for distillation loss")
     p.add_argument("--project", default="runs")
     p.add_argument("--name", default="gv_yolo26_distilled")
     return p.parse_args()
@@ -39,7 +40,9 @@ def parse_args():
 def main(opt):
     NWDDetectionLoss.alpha = opt.alpha
     _KD["weight_bckd"], _KD["weight_cwd"] = opt.w_bckd, opt.w_cwd
+    _KD["alpha"] = opt.alpha
     DistillTrainer.teacher = opt.teacher
+    DistillTrainer.distill_warmup_epochs = opt.distill_warmup_epochs
     model = YOLO(opt.student, task="detect")
     if opt.student.endswith((".yaml", ".yml")) and opt.weights:
         model.load(opt.weights)

@@ -139,9 +139,14 @@ def normalize_class_name(raw_name: str) -> str:
     return raw_name
 
 
+from gv_modules.suspension_preview import SuspensionPreview
+
+preview_engine = SuspensionPreview()
+
 # Session tracker state
 tracker_state = {
     "seen": defaultdict(int),       # track_id -> frames seen
+    "conf_hist": defaultdict(list), # track_id -> rolling confidence list
     "confirmed": {},                # track_id -> class_name
     "conf_threshold": 0.15,
     "confirm_frames": 1,
@@ -156,13 +161,16 @@ def get_active_model_info():
     return info, info["instance"]
 
 
-def draw_hud_box(img, xyxy, label, conf, track_id, confirmed, frames_seen=1):
-    """Draw high-visibility bounding box and HUD tag with candidate distinction."""
+def draw_hud_box(img, xyxy, label, conf, track_id, confirmed, frames_seen=1, prev_info=None):
+    """Draw high-visibility bounding box and HUD tag with candidate distinction and preview telemetry."""
     x1, y1, x2, y2 = map(int, xyxy)
     base_color = COLORS.get(label, (0, 255, 255))
     candidate_color = CANDIDATE_COLORS.get(label, (255, 235, 0))
 
-    color = base_color if confirmed else candidate_color
+    if prev_info and confirmed and "damping_color" in prev_info:
+        color = prev_info["damping_color"]
+    else:
+        color = base_color if confirmed else candidate_color
     thickness = 3 if confirmed else 2
 
     # Draw bounding box
@@ -178,35 +186,45 @@ def draw_hud_box(img, xyxy, label, conf, track_id, confirmed, frames_seen=1):
 
     # Tag text
     status_sym = "●" if confirmed else f"○{frames_seen}"
-    tag = f"#{track_id} {label} {conf:.2f} {status_sym}"
-    (tw, th), _ = cv2.getTextSize(tag, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2)
+    if prev_info and confirmed:
+        tag = f"#{track_id} {label} {conf:.2f} | {prev_info['z_m']}m {prev_info['tti_ms']}ms [{prev_info['damping_cmd']}] {status_sym}"
+    else:
+        tag = f"#{track_id} {label} {conf:.2f} {status_sym}"
+    (tw, th), _ = cv2.getTextSize(tag, cv2.FONT_HERSHEY_SIMPLEX, 0.50, 2)
 
     # Tag banner
     tag_y = max(th + 8, y1)
     cv2.rectangle(img, (x1, tag_y - th - 8), (x1 + tw + 10, tag_y), color, -1)
-    cv2.putText(img, tag, (x1 + 4, tag_y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(img, tag, (x1 + 4, tag_y - 4), cv2.FONT_HERSHEY_SIMPLEX, 0.50, (0, 0, 0), 2, cv2.LINE_AA)
 
 
-def draw_dashboard_hud(img, ahead_hazards, fps, counts, model_name):
-    """Draw automotive HUD top header and warning banner."""
+def draw_dashboard_hud(img, ahead_hazards, fps, counts, model_name, suspension_status="NOMINAL", nearest_z=None, nearest_tti=None):
+    """Draw automotive HUD top header and warning banner with active suspension telemetry."""
     h, w = img.shape[:2]
     overlay = img.copy()
-    cv2.rectangle(overlay, (0, 0), (w, 52), (15, 18, 25), -1)
+    cv2.rectangle(overlay, (0, 0), (w, 62), (15, 18, 25), -1)
     cv2.addWeighted(overlay, 0.75, img, 0.25, 0, img)
 
     # Warning status text
     if ahead_hazards:
         warning_str = "WARNING: " + " + ".join(sorted(h.upper() for h in ahead_hazards)) + " AHEAD"
-        cv2.putText(img, warning_str, (16, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 0, 255), 2, cv2.LINE_AA)
+        cv2.putText(img, warning_str, (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 0, 255), 2, cv2.LINE_AA)
     else:
-        cv2.putText(img, "ROAD CLEAR", (16, 36), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (50, 220, 90), 2, cv2.LINE_AA)
+        cv2.putText(img, "ROAD CLEAR", (16, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (50, 220, 90), 2, cv2.LINE_AA)
+
+    # Active Suspension Status line
+    susp_color = (0, 0, 255) if "CRITICAL" in suspension_status else ((0, 165, 255) if "SOFTEN" in suspension_status else (50, 220, 90))
+    susp_info = f"ACTIVE SUSPENSION: {suspension_status}"
+    if nearest_z is not None and nearest_tti is not None:
+        susp_info += f" [Z: {nearest_z:.1f}m | TTI: {nearest_tti}ms]"
+    cv2.putText(img, susp_info, (16, 52), cv2.FONT_HERSHEY_SIMPLEX, 0.52, susp_color, 1, cv2.LINE_AA)
 
     # Telemetry text
     bump_count = counts.get("Speed Bump", 0)
     pothole_count = counts.get("Pothole", 0)
     telemetry = f"{model_name} | {fps:4.1f} FPS | Bumps: {bump_count} Potholes: {pothole_count}"
-    (tw, _), _ = cv2.getTextSize(telemetry, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 1)
-    cv2.putText(img, telemetry, (w - tw - 16, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.55, (230, 230, 230), 1, cv2.LINE_AA)
+    (tw, _), _ = cv2.getTextSize(telemetry, cv2.FONT_HERSHEY_SIMPLEX, 0.52, 1)
+    cv2.putText(img, telemetry, (w - tw - 16, 35), cv2.FONT_HERSHEY_SIMPLEX, 0.52, (230, 230, 230), 1, cv2.LINE_AA)
 
 
 @app.get("/")
@@ -321,6 +339,7 @@ def get_annotated_video(name: str):
 def reset_tracker():
     """Reset ByteTrack tracker states."""
     tracker_state["seen"].clear()
+    tracker_state["conf_hist"].clear()
     tracker_state["confirmed"].clear()
     tracker_state["total_frames"] = 0
     for m in MODELS_REGISTRY.values():
@@ -335,6 +354,7 @@ async def predict_frame(
     image_base64: Optional[str] = Form(None),
     conf_threshold: float = Form(0.15),
     confirm_frames: int = Form(1),
+    ego_speed_kmh: float = Form(60.0),
     model_name: Optional[str] = Form(None),
 ):
     """Run real-time detection, tracking, and temporal confirmation on an uploaded camera frame or image file."""
@@ -405,8 +425,10 @@ async def predict_frame(
     ahead_hazards = set()
     counts = {"Pothole": 0, "Speed Bump": 0}
     detections = []
+    nearest_hazard = None
 
     seen = tracker_state["seen"]
+    conf_hist = tracker_state["conf_hist"]
     confirmed_map = tracker_state["confirmed"]
 
     if res.boxes is not None and len(res.boxes) > 0:
@@ -429,21 +451,32 @@ async def predict_frame(
             cls_name = normalize_class_name(raw_name)
 
             seen[tid] += 1
-            is_confirmed = (seen[tid] >= confirm_frames) and (conf_val >= conf_threshold)
+            conf_hist[tid].append(conf_val)
+            if len(conf_hist[tid]) > 10:
+                conf_hist[tid].pop(0)
+
+            cum_conf = sum(conf_hist[tid])
+            # Fast trigger for high confidence near-field hazards (lower 40% of frame)
+            fast_trigger = (conf_val >= 0.72 and box[3] >= 0.60 * frame.shape[0])
+            is_confirmed = fast_trigger or (cum_conf >= 1.05) or ((seen[tid] >= confirm_frames) and (conf_val >= conf_threshold))
 
             # Auto-confirm on static image uploads if confidence meets threshold
             if is_static_upload and conf_val >= conf_threshold:
                 is_confirmed = True
 
+            prev = preview_engine.compute_preview(box, frame.shape[0], cls_name, ego_speed_kmh)
+
             if is_confirmed:
                 confirmed_map[tid] = cls_name
                 ahead_hazards.add(cls_name)
                 counts[cls_name] = counts.get(cls_name, 0) + 1
+                if nearest_hazard is None or prev["z_m"] < nearest_hazard["z_m"]:
+                    nearest_hazard = prev
 
             # Draw box on frame: draw if confirmed OR if confidence meets threshold
             should_draw = (conf_val >= conf_threshold) or is_confirmed
             if should_draw:
-                draw_hud_box(frame, box, cls_name, conf_val, tid, is_confirmed, seen[tid])
+                draw_hud_box(frame, box, cls_name, conf_val, tid, is_confirmed, seen[tid], prev_info=prev)
 
             detections.append({
                 "track_id": tid,
@@ -452,6 +485,9 @@ async def predict_frame(
                 "confirmed": bool(is_confirmed),
                 "frames_observed": seen[tid],
                 "box": [round(float(c), 1) for c in box],
+                "z_m": prev["z_m"],
+                "tti_ms": prev["tti_ms"],
+                "damping_cmd": prev["damping_cmd"],
             })
 
     # Measure latency
@@ -460,8 +496,12 @@ async def predict_frame(
     fps = 1000.0 / latency_ms if latency_ms > 0 else 0.0
     tracker_state["last_infer_time_ms"] = latency_ms
 
+    active_susp_status = nearest_hazard["damping_cmd"] if nearest_hazard else "NOMINAL"
+    nz = nearest_hazard["z_m"] if nearest_hazard else None
+    ntti = nearest_hazard["tti_ms"] if nearest_hazard else None
+
     # Overlay HUD dashboard
-    draw_dashboard_hud(frame, ahead_hazards, fps, counts, active_info["name"])
+    draw_dashboard_hud(frame, ahead_hazards, fps, counts, active_info["name"], active_susp_status, nz, ntti)
 
     # Encode annotated frame to JPEG base64
     _, buffer = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 80])
@@ -473,6 +513,12 @@ async def predict_frame(
         "alert": len(ahead_hazards) > 0,
         "counts": counts,
         "detections": detections,
+        "suspension": {
+            "damping_cmd": active_susp_status,
+            "nearest_z_m": nz,
+            "nearest_tti_ms": ntti,
+            "ego_speed_kmh": round(ego_speed_kmh, 1),
+        },
         "fps": round(fps, 1),
         "latency_ms": round(latency_ms, 1),
         "frame_number": tracker_state["total_frames"],
