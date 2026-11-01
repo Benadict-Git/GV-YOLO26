@@ -36,7 +36,9 @@ GV-YOLO26/runs/
 report_build/build/
 report_build/backup/
 
-# Temp files, backups, locks
+# Project Reports and Document artifacts
+*.docx
+*.pdf
 *.bak
 *.tmp
 .~lock.*

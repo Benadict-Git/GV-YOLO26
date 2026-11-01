@@ -29,15 +29,13 @@ if str(DEMO_DIR) not in sys.path:
 import gv_modules  # noqa: F401
 from gv_modules.preprocess import enhance_road_surface
 from gv_modules.hazard_mapper import estimate_lateral_offset, project_hazard_gps
-import sbp_modules
-sbp_modules.register_sbp_modules()
 
 from hazard_store import HazardStore
 hazard_store = HazardStore()
 
 from ultralytics import YOLO
 
-app = FastAPI(title="GV-YOLO26 & SBP-YOLO Road Hazard Detection HUD")
+app = FastAPI(title="GV-YOLO26 Road Hazard Detection HUD")
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,12 +51,6 @@ if not GV_WEIGHTS_PATH.exists():
     GV_WEIGHTS_PATH = GV_DIR / "weights_kaggle/benchmark_out/weights/s6_gv_yolo26.pt"
 
 GV_OPT_WEIGHTS_PATH = GV_DIR / "weights_kaggle/benchmark_out/weights/s4_ghost.pt"
-
-SBP_WEIGHTS_PATH = ROOT / "ultralytics-distill/runs/distill/SBP-YOLO/weights/best.pt"
-if not SBP_WEIGHTS_PATH.exists():
-    alt_sbp = list(ROOT.rglob("*SBP-YOLO*best.pt"))
-    if alt_sbp:
-        SBP_WEIGHTS_PATH = alt_sbp[0]
 
 # Model definitions
 MODELS_REGISTRY = {
@@ -90,20 +82,6 @@ MODELS_REGISTRY = {
         "nms_free": True,
         "color_theme": "#f59e0b",
     },
-    "sbp-yolo": {
-        "id": "sbp-yolo",
-        "name": "SBP-YOLO",
-        "subtitle": "Liang et al. Distilled Benchmark",
-        "tag": "Benchmark (Distilled)",
-        "params": "2.62 M",
-        "gflops": "6.6",
-        "map50": "86.9%",
-        "arch": "YOLO11n + VoVGSCSPC + GhostConv + LEDH",
-        "path": SBP_WEIGHTS_PATH,
-        "instance": None,
-        "nms_free": False,
-        "color_theme": "#10b981",
-    },
 }
 
 # Load models safely
@@ -121,7 +99,7 @@ for m_id, m_info in MODELS_REGISTRY.items():
         print(f"⚠️ Weights file for {m_info['name']} not found at {p}")
 
 # Active model tracker
-active_model_id = "gv-yolo26" if MODELS_REGISTRY["gv-yolo26"]["instance"] else "sbp-yolo"
+active_model_id = "gv-yolo26"
 
 # Class colors: Pothole (Amber/Orange), Speed Bump (Neon Green)
 COLORS = {
