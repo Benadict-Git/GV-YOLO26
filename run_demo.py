@@ -42,6 +42,11 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1].isdigit():
         port = int(sys.argv[1])
 
+    ssl_cert = ROOT / "demo_app" / "ssl" / "cert.pem"
+    ssl_key = ROOT / "demo_app" / "ssl" / "key.pem"
+    use_ssl = ssl_cert.exists() and ssl_key.exists() and "--no-ssl" not in sys.argv
+    proto = "https" if use_ssl else "http"
+
     ips = get_local_ips()
 
     print("\n" + "=" * 68)
@@ -53,18 +58,34 @@ def main():
     print("  Classes   : Speed Bump, Pothole")
     print("  Tracker   : ByteTrack with 1-2 Frame Temporal Confirmation")
     print("-" * 68)
-    print("  📱 OPEN ON YOUR PHONE BROWSER:")
+    print(f"  📱 OPEN ON YOUR PHONE BROWSER ({'SECURE HTTPS' if use_ssl else 'HTTP'}):")
     for ip in ips:
-        print(f"     👉  http://{ip}:{port}")
+        print(f"     👉  {proto}://{ip}:{port}")
     print("\n  💻 OPEN ON YOUR LAPTOP:")
-    print(f"     👉  http://localhost:{port}")
+    print(f"     👉  {proto}://localhost:{port}")
     print("=" * 68)
+    if use_ssl:
+        print("  [IMPORTANT FOR PHONE CAMERA]:")
+        print("  Mobile browsers require HTTPS to allow camera access.")
+        print("  When your phone shows 'Your connection is not private',")
+        print("  tap 'Advanced' -> 'Proceed to 10.90.55.73' to allow the camera.")
     print("  [Tip] Toggle between GV-YOLO26 and SBP-YOLO with 1-tap on the HUD.")
     print("  [Tip] Ensure your phone is connected to the same Wi-Fi / Hotspot.")
     print("  [Tip] Select 'Benchmark Clips' for pre-rendered evaluation playback.")
     print("  Press Ctrl+C to stop the server.\n")
 
-    uvicorn.run("demo_app.app:app", host="0.0.0.0", port=port, reload=False, log_level="info")
+    uvicorn_kwargs = {
+        "app": "demo_app.app:app",
+        "host": "0.0.0.0",
+        "port": port,
+        "reload": False,
+        "log_level": "info",
+    }
+    if use_ssl:
+        uvicorn_kwargs["ssl_keyfile"] = str(ssl_key)
+        uvicorn_kwargs["ssl_certfile"] = str(ssl_cert)
+
+    uvicorn.run(**uvicorn_kwargs)
 
 
 if __name__ == "__main__":

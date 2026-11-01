@@ -55,3 +55,7 @@ crop_sig_user.png
 .DS_Store
 .idea/
 .vscode/
+
+# Local SSL certificates and private keys
+*.pem
+demo_app/ssl/

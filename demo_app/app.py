@@ -11,7 +11,7 @@ from typing import Dict, List, Optional
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, Response, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -27,8 +27,13 @@ if str(DEMO_DIR) not in sys.path:
     sys.path.insert(0, str(DEMO_DIR))
 
 import gv_modules  # noqa: F401
+from gv_modules.preprocess import enhance_road_surface
+from gv_modules.hazard_mapper import estimate_lateral_offset, project_hazard_gps
 import sbp_modules
 sbp_modules.register_sbp_modules()
+
+from hazard_store import HazardStore
+hazard_store = HazardStore()
 
 from ultralytics import YOLO
 
@@ -356,6 +361,10 @@ async def predict_frame(
     confirm_frames: int = Form(1),
     ego_speed_kmh: float = Form(60.0),
     model_name: Optional[str] = Form(None),
+    lat: Optional[float] = Form(None),
+    lon: Optional[float] = Form(None),
+    heading: Optional[float] = Form(0.0),
+    enhance_unmarked: bool = Form(True),
 ):
     """Run real-time detection, tracking, and temporal confirmation on an uploaded camera frame or image file."""
     global active_model_id
@@ -398,15 +407,18 @@ async def predict_frame(
     tracker_state["conf_threshold"] = conf_threshold
     tracker_state["confirm_frames"] = confirm_frames
 
-    # Adaptive night contrast enhancement for low-light headlight frames
-    is_night = cv2.mean(frame)[0] < 100
-    if is_night:
-        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
-        infer_frame = cv2.cvtColor(cv2.merge((clahe.apply(l), a, b)), cv2.COLOR_LAB2BGR)
+    # Road surface relief and contrast enhancement for unmarked speed bumps
+    if enhance_unmarked:
+        infer_frame = enhance_road_surface(frame)
     else:
-        infer_frame = frame
+        is_night = cv2.mean(frame)[0] < 100
+        if is_night:
+            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            clahe = cv2.createCLAHE(clipLimit=2.2, tileGridSize=(8, 8))
+            infer_frame = cv2.cvtColor(cv2.merge((clahe.apply(l), a, b)), cv2.COLOR_LAB2BGR)
+        else:
+            infer_frame = frame
 
     # Determine NMS setting based on model architecture
     track_kwargs = {
@@ -465,6 +477,31 @@ async def predict_frame(
                 is_confirmed = True
 
             prev = preview_engine.compute_preview(box, frame.shape[0], cls_name, ego_speed_kmh)
+            x_lat_m = estimate_lateral_offset(box, frame.shape[1], prev["z_m"])
+
+            geotag_info = None
+            if is_confirmed and lat is not None and lon is not None:
+                try:
+                    recorded_h = hazard_store.record_hazard(
+                        class_name=cls_name,
+                        ego_lat=float(lat),
+                        ego_lon=float(lon),
+                        heading_deg=float(heading or 0.0),
+                        dist_z_m=float(prev["z_m"]),
+                        dist_x_m=float(x_lat_m),
+                        confidence=float(conf_val),
+                        ego_speed_kmh=float(ego_speed_kmh),
+                    )
+                    geotag_info = {
+                        "hazard_id": recorded_h["id"],
+                        "lat": recorded_h["lat"],
+                        "lon": recorded_h["lon"],
+                        "status": recorded_h["status"],
+                        "sightings": recorded_h["sightings"],
+                        "google_maps_url": recorded_h["google_maps_url"],
+                    }
+                except Exception as e:
+                    print(f"[Geotag Warning] Failed to record hazard: {e}")
 
             if is_confirmed:
                 confirmed_map[tid] = cls_name
@@ -488,6 +525,7 @@ async def predict_frame(
                 "z_m": prev["z_m"],
                 "tti_ms": prev["tti_ms"],
                 "damping_cmd": prev["damping_cmd"],
+                "geotag": geotag_info,
             })
 
     # Measure latency
@@ -547,6 +585,77 @@ def get_status():
         "architecture": active_info["arch"],
         "available_models": list(MODELS_REGISTRY.keys()),
         "server_time": time.strftime("%Y-%m-%d %H:%M:%S"),
+    }
+
+
+@app.get("/api/hazards")
+def list_hazards(class_name: Optional[str] = None):
+    """List all crowdsourced hazards with spatial coordinates and Google Maps links."""
+    return JSONResponse(hazard_store.get_all(class_name))
+
+
+@app.get("/api/hazards/geojson")
+def get_hazards_geojson():
+    """Return all hazards formatted as RFC 7946 standard GeoJSON FeatureCollection."""
+    return JSONResponse(hazard_store.to_geojson())
+
+
+@app.get("/api/hazards/kml")
+def download_hazards_kml():
+    """Download hazards as KML file for direct import into Google My Maps or Google Earth."""
+    kml_str = hazard_store.to_kml()
+    return Response(
+        content=kml_str,
+        media_type="application/vnd.google-earth.kml+xml",
+        headers={"Content-Disposition": "attachment; filename=gv_yolo26_hazards.kml"},
+    )
+
+
+@app.post("/api/hazards/report")
+async def report_hazard(
+    class_name: str = Form(...),
+    lat: float = Form(...),
+    lon: float = Form(...),
+    heading: float = Form(0.0),
+    z_m: float = Form(15.0),
+    x_m: float = Form(0.0),
+    confidence: float = Form(0.85),
+    ego_speed_kmh: float = Form(60.0),
+):
+    """Manually or externally report a hazard with GPS coordinates for mapping."""
+    res = hazard_store.record_hazard(
+        class_name=normalize_class_name(class_name),
+        ego_lat=lat,
+        ego_lon=lon,
+        heading_deg=heading,
+        dist_z_m=z_m,
+        dist_x_m=x_m,
+        confidence=confidence,
+        ego_speed_kmh=ego_speed_kmh,
+    )
+    return {"status": "ok", "hazard": res}
+
+
+@app.delete("/api/hazards/clear")
+def clear_hazards():
+    """Clear all recorded hazards from the spatial store."""
+    hazard_store.clear()
+    return {"status": "ok", "message": "All hazard records cleared"}
+
+
+@app.get("/api/hazards/summary")
+def get_hazards_summary():
+    """Return summary statistics of recorded speed bumps and potholes."""
+    hazards = hazard_store.get_all()
+    speed_bumps = [h for h in hazards if h["class_name"] == "Speed Bump"]
+    potholes = [h for h in hazards if h["class_name"] == "Pothole"]
+    verified = [h for h in hazards if h["status"] == "VERIFIED"]
+    return {
+        "total": len(hazards),
+        "speed_bumps": len(speed_bumps),
+        "potholes": len(potholes),
+        "verified": len(verified),
+        "candidates": len(hazards) - len(verified),
     }
 
 

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "h_1001",
+    "class_name": "Speed Bump",
+    "lat": 12.97214,
+    "lon": 77.59468,
+    "confidence": 0.88,
+    "sightings": 4,
+    "status": "VERIFIED",
+    "first_seen": "2026-10-31T09:30:00Z",
+    "last_seen": "2026-10-31T09:31:15Z",
+    "nearest_z_m": 18.5,
+    "ego_speed_kmh": 45.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.972140,77.594680"
+  },
+  {
+    "id": "h_1002",
+    "class_name": "Speed Bump",
+    "lat": 12.97345,
+    "lon": 77.59512,
+    "confidence": 0.84,
+    "sightings": 2,
+    "status": "VERIFIED",
+    "first_seen": "2026-10-31T09:32:00Z",
+    "last_seen": "2026-10-31T09:32:45Z",
+    "nearest_z_m": 22.0,
+    "ego_speed_kmh": 50.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.973450,77.595120"
+  },
+  {
+    "id": "h_1003",
+    "class_name": "Pothole",
+    "lat": 12.9712,
+    "lon": 77.59421,
+    "confidence": 0.91,
+    "sightings": 3,
+    "status": "VERIFIED",
+    "first_seen": "2026-10-31T09:28:10Z",
+    "last_seen": "2026-10-31T09:29:05Z",
+    "nearest_z_m": 14.2,
+    "ego_speed_kmh": 40.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.971200,77.594210"
+  },
+  {
+    "id": "h_152740_4",
+    "class_name": "Speed Bump",
+    "lat": 12.972302,
+    "lon": 77.59468,
+    "confidence": 0.95,
+    "sightings": 1,
+    "status": "CANDIDATE",
+    "first_seen": "2026-10-31T09:49:12Z",
+    "last_seen": "2026-10-31T09:49:12Z",
+    "nearest_z_m": 18.0,
+    "ego_speed_kmh": 60.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.972302,77.594680"
+  },
+  {
+    "id": "h_7187385_5",
+    "class_name": "Pothole",
+    "lat": 11.678156,
+    "lon": 78.125331,
+    "confidence": 0.263,
+    "sightings": 6,
+    "status": "VERIFIED",
+    "first_seen": "2026-11-01T04:26:27Z",
+    "last_seen": "2026-11-01T04:26:44Z",
+    "nearest_z_m": 3.5,
+    "ego_speed_kmh": 60.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=11.678156,78.125331"
+  }
+]

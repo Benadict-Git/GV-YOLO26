@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
     :root {
       --bg: #f8fafc;
@@ -890,6 +892,33 @@
           <button class="chip" id="speed100" onclick="setEgoSpeed(100, this)">100 km/h</button>
         </div>
       </div>
+
+      <div class="control-row">
+        <div class="control-label-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+          </svg>
+          <span>Unmarked Bump CLAHE</span>
+        </div>
+        <div class="control-chips">
+          <button class="chip active" id="unmarkedOn" onclick="setUnmarkedEnhance(true, this)">Enabled</button>
+          <button class="chip" id="unmarkedOff" onclick="setUnmarkedEnhance(false, this)">Disabled</button>
+        </div>
+      </div>
+
+      <div class="control-row">
+        <div class="control-label-group">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+          </svg>
+          <span>GPS Hazard Tagging</span>
+        </div>
+        <div class="control-chips">
+          <button class="chip active" id="gpsAuto" onclick="setGpsMode('auto', this)">Device GPS</button>
+          <button class="chip" id="gpsSim" onclick="setGpsMode('sim', this)">Demo Route</button>
+        </div>
+      </div>
     </div>
 
     <!-- Mode Selector Tabs -->
@@ -917,6 +946,14 @@
           <line x1="12" y1="3" x2="12" y2="15"></line>
         </svg>
         <span>Upload Media</span>
+      </div>
+      <div class="tab-btn" id="tabMap" onclick="switchMode('map')">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+          <line x1="8" y1="2" x2="8" y2="18"></line>
+          <line x1="16" y1="6" x2="16" y2="22"></line>
+        </svg>
+        <span>Hazard Map</span>
       </div>
     </nav>
 
@@ -1027,6 +1064,64 @@
 
         <input type="file" id="snapshotInput" accept="image/*" onchange="handleSnapshot(event)">
         <input type="file" id="videoFileInput" accept="video/*" onchange="handleCustomVideo(event)">
+      </div>
+    </div>
+
+    <!-- Crowdsourced Hazard Map View (Google Maps / Leaflet) -->
+    <div class="card" id="mapCard" style="display: none; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px; margin-bottom: 24px; box-shadow: var(--shadow-sm);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 style="font-size: 16px; font-weight: 700; color: var(--text-main);">Crowdsourced Road Hazard Map</h3>
+            <span id="mapVerifiedPill" style="font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 12px; background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border);">0 Verified</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+            Geotagged speed bumps and potholes with Google Maps &amp; KML export
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="/api/hazards/kml" download="gv_yolo26_hazards.kml" class="btn btn-primary" style="text-decoration: none; font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export to Google My Maps (KML)
+          </a>
+          <a href="/api/hazards/geojson" download="gv_yolo26_hazards.geojson" class="btn" style="text-decoration: none; font-size: 12px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px;">
+            GeoJSON
+          </a>
+          <button class="btn" onclick="fetchHazardMap()" style="font-size: 12px; padding: 6px 10px;">
+            Refresh
+          </button>
+          <button class="btn btn-danger" onclick="clearHazardMap()" style="font-size: 12px; padding: 6px 10px;">
+            Clear
+          </button>
+        </div>
+      </div>
+
+      <!-- Live GPS Status Banner -->
+      <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 12px; font-size: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="width: 8px; height: 8px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+          <span id="gpsStatusText">GPS: 12.971600°N, 77.594600°E (Ready)</span>
+        </div>
+        <div style="font-size: 11px; color: var(--text-muted);" id="gpsSourceTag">
+          Simulated Vehicle Telemetry
+        </div>
+      </div>
+
+      <!-- Map Display Container -->
+      <div id="hazardMap" style="height: 380px; width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 14px; position: relative; z-index: 1;"></div>
+
+      <!-- List of Recorded Pins -->
+      <div>
+        <div style="font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 8px; display: flex; justify-content: space-between;">
+          <span>Detected Hazard Pins</span>
+          <span id="hazardCountSummary" style="font-weight: 400; color: var(--text-muted); font-size: 12px;">0 speed bumps · 0 potholes</span>
+        </div>
+        <div id="hazardListContainer" style="max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;">
+          <div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px 0;">
+            No road hazards recorded yet. Point camera at road bumps to plot them on the map.
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1270,9 +1365,12 @@
       document.getElementById('tabCamera').classList.toggle('active', mode === 'camera');
       document.getElementById('tabDemo').classList.toggle('active', mode === 'demo');
       document.getElementById('tabUpload').classList.toggle('active', mode === 'upload');
+      document.getElementById('tabMap').classList.toggle('active', mode === 'map');
 
       document.getElementById('cameraControls').style.display = (mode === 'camera') ? 'flex' : 'none';
       document.getElementById('uploadControls').style.display = (mode === 'upload') ? 'flex' : 'none';
+
+      const mapCard = document.getElementById('mapCard');
 
       if (mode === 'camera') {
         videoPlayer.pause();
@@ -1280,12 +1378,16 @@
         uploadDropzone.style.display = 'none';
         customVideoBar.style.display = 'none';
         canvas.style.display = 'block';
+        viewportCard.style.display = 'block';
+        mapCard.style.display = 'none';
       } else if (mode === 'demo') {
         stopCamera();
         uploadDropzone.style.display = 'none';
         customVideoBar.style.display = 'none';
         videoPlayer.style.display = 'block';
         canvas.style.display = 'none';
+        viewportCard.style.display = 'block';
+        mapCard.style.display = 'none';
       } else if (mode === 'upload') {
         stopCamera();
         videoPlayer.pause();
@@ -1293,6 +1395,20 @@
         canvas.style.display = 'block';
         uploadDropzone.style.display = 'flex';
         customVideoBar.style.display = 'none';
+        viewportCard.style.display = 'block';
+        mapCard.style.display = 'none';
+      } else if (mode === 'map') {
+        stopCamera();
+        videoPlayer.pause();
+        videoPlayer.style.display = 'none';
+        uploadDropzone.style.display = 'none';
+        customVideoBar.style.display = 'none';
+        viewportCard.style.display = 'none';
+        mapCard.style.display = 'block';
+        setTimeout(() => {
+          initLeafletMap();
+          fetchHazardMap();
+        }, 50);
       }
     }
 
@@ -1307,6 +1423,17 @@
     }
 
     async function startCamera() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        if (location.protocol === 'http:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+          const httpsUrl = location.href.replace('http:', 'https:');
+          if (confirm('Mobile Camera requires HTTPS:\n\nMobile browsers disable camera access on plain HTTP over Wi-Fi.\n\nSwitch to HTTPS now?\n👉 ' + httpsUrl)) {
+            location.href = httpsUrl;
+          }
+          return;
+        }
+        alert('Could not start live camera: navigator.mediaDevices is not available in this browser context.');
+        return;
+      }
       try {
         const constraints = {
           video: {
@@ -1373,6 +1500,17 @@
           form.append('confirm_frames', currentConfirmFrames.toString());
           form.append('ego_speed_kmh', currentEgoSpeed.toString());
           form.append('model_name', selectedModel);
+          if (currentGps.lat !== null && currentGps.lon !== null) {
+            form.append('lat', currentGps.lat.toFixed(6));
+            form.append('lon', currentGps.lon.toFixed(6));
+            form.append('heading', currentGps.heading.toString());
+          }
+          form.append('enhance_unmarked', enhanceUnmarked.toString());
+
+          // Advance simulated GPS position along heading if in demo drive mode
+          if (currentGps.mode === 'sim') {
+            advanceSimulatedGps();
+          }
 
           const resp = await fetch('/api/predict_frame', {
             method: 'POST',
@@ -1420,6 +1558,16 @@
           form.append('confirm_frames', currentConfirmFrames.toString());
           form.append('ego_speed_kmh', currentEgoSpeed.toString());
           form.append('model_name', selectedModel);
+          if (currentGps.lat !== null && currentGps.lon !== null) {
+            form.append('lat', currentGps.lat.toFixed(6));
+            form.append('lon', currentGps.lon.toFixed(6));
+            form.append('heading', currentGps.heading.toString());
+          }
+          form.append('enhance_unmarked', enhanceUnmarked.toString());
+
+          if (currentGps.mode === 'sim') {
+            advanceSimulatedGps();
+          }
 
           const resp = await fetch('/api/predict_frame', {
             method: 'POST',
@@ -1675,9 +1823,209 @@
       }
     }
 
+    // --- Hazard Map & Geotagging Subsystem ---
+    let enhanceUnmarked = true;
+    let currentGps = { lat: 12.9716, lon: 77.5946, heading: 0.0, mode: 'auto' };
+    let leafletMap = null;
+    let mapMarkersLayer = null;
+    let vehicleMarker = null;
+
+    function setUnmarkedEnhance(enabled, btn) {
+      enhanceUnmarked = enabled;
+      document.getElementById('unmarkedOn').classList.toggle('active', enabled);
+      document.getElementById('unmarkedOff').classList.toggle('active', !enabled);
+    }
+
+    function setGpsMode(mode, btn) {
+      currentGps.mode = mode;
+      document.getElementById('gpsAuto').classList.toggle('active', mode === 'auto');
+      document.getElementById('gpsSim').classList.toggle('active', mode === 'sim');
+      const tag = document.getElementById('gpsSourceTag');
+      if (mode === 'sim') {
+        tag.textContent = 'Simulated Drive Route (Bangalore)';
+        currentGps.lat = 12.971600;
+        currentGps.lon = 77.594600;
+        currentGps.heading = 15.0;
+        updateGpsStatusText();
+      } else {
+        tag.textContent = 'Device Native GPS';
+        initGpsTracking();
+      }
+    }
+
+    function advanceSimulatedGps() {
+      // Advance ~1.2 meters per frame at 60 km/h
+      const distM = (currentEgoSpeed / 3.6) * 0.09;
+      const rEarth = 6371000;
+      const headingRad = (currentGps.heading * Math.PI) / 180;
+      const dLat = (distM * Math.cos(headingRad)) / rEarth;
+      const dLon = (distM * Math.sin(headingRad)) / (rEarth * Math.cos((currentGps.lat * Math.PI) / 180));
+      currentGps.lat += (dLat * 180) / Math.PI;
+      currentGps.lon += (dLon * 180) / Math.PI;
+      updateGpsStatusText();
+    }
+
+    function updateGpsStatusText() {
+      const el = document.getElementById('gpsStatusText');
+      if (el) {
+        el.textContent = `GPS: ${currentGps.lat.toFixed(6)}°N, ${currentGps.lon.toFixed(6)}°E (H: ${Math.round(currentGps.heading)}°)`;
+      }
+      if (vehicleMarker && leafletMap) {
+        vehicleMarker.setLatLng([currentGps.lat, currentGps.lon]);
+      }
+    }
+
+    function initGpsTracking() {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.watchPosition(
+          (pos) => {
+            if (currentGps.mode === 'auto') {
+              currentGps.lat = pos.coords.latitude;
+              currentGps.lon = pos.coords.longitude;
+              currentGps.heading = pos.coords.heading || 0.0;
+              updateGpsStatusText();
+            }
+          },
+          (err) => {
+            console.log('Device GPS fallback to simulated coords:', err.message);
+          },
+          { enableHighAccuracy: true, maximumAge: 1000 }
+        );
+      }
+    }
+
+    function initLeafletMap() {
+      if (leafletMap !== null) {
+        leafletMap.invalidateSize();
+        return;
+      }
+      const mapDiv = document.getElementById('hazardMap');
+      if (!mapDiv) return;
+
+      const centerLat = currentGps.lat || 12.9716;
+      const centerLon = currentGps.lon || 77.5946;
+
+      leafletMap = L.map('hazardMap').setView([centerLat, centerLon], 16);
+
+      // OpenStreetMap clean tiles
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors | GV-YOLO26'
+      }).addTo(leafletMap);
+
+      mapMarkersLayer = L.layerGroup().addTo(leafletMap);
+
+      // Vehicle location marker
+      const carIcon = L.divIcon({
+        className: 'vehicle-marker',
+        html: `<div style="background: #2563eb; width: 14px; height: 14px; border-radius: 50%; border: 3px solid #ffffff; box-shadow: 0 0 8px rgba(37,99,235,0.6);"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7]
+      });
+      vehicleMarker = L.marker([centerLat, centerLon], { icon: carIcon }).addTo(leafletMap);
+      vehicleMarker.bindPopup('<b>Your Vehicle</b><br>Preview camera active');
+    }
+
+    async function fetchHazardMap() {
+      try {
+        const resp = await fetch('/api/hazards');
+        const hazards = await resp.json();
+
+        if (mapMarkersLayer) {
+          mapMarkersLayer.clearLayers();
+        }
+
+        const listContainer = document.getElementById('hazardListContainer');
+        const countSummary = document.getElementById('hazardCountSummary');
+        const verifiedPill = document.getElementById('mapVerifiedPill');
+
+        let bumps = 0;
+        let holes = 0;
+        let verified = 0;
+
+        if (hazards.length === 0) {
+          listContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); font-size: 12px; padding: 24px 0;">No road hazards recorded yet. Point camera at road bumps to plot them on the map.</div>`;
+        } else {
+          listContainer.innerHTML = '';
+        }
+
+        hazards.forEach((h) => {
+          const isBump = h.class_name === 'Speed Bump';
+          if (isBump) bumps++; else holes++;
+          if (h.status === 'VERIFIED') verified++;
+
+          const pinColor = isBump ? (h.status === 'VERIFIED' ? '#16a34a' : '#d97706') : '#dc2626';
+          const pinBadge = isBump ? '⚡ BUMP' : '⚠️ HOLE';
+
+          if (mapMarkersLayer) {
+            const markerIcon = L.divIcon({
+              className: 'hazard-pin',
+              html: `<div style="background: ${pinColor}; color: #ffffff; font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 12px; border: 2px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.25); white-space: nowrap;">${pinBadge}</div>`,
+              iconAnchor: [24, 12]
+            });
+
+            const marker = L.marker([h.lat, h.lon], { icon: markerIcon }).addTo(mapMarkersLayer);
+
+            const popupContent = `
+              <div style="font-family: inherit; font-size: 12px; min-width: 170px;">
+                <div style="font-size: 13px; font-weight: 700; color: ${pinColor}; margin-bottom: 4px;">${h.class_name}</div>
+                <div><b>Status:</b> ${h.status} (${h.sightings} sightings)</div>
+                <div><b>Confidence:</b> ${Math.round(h.confidence * 100)}%</div>
+                <div><b>Preview Z:</b> ${h.nearest_z_m} m</div>
+                <div><b>Coordinates:</b> ${h.lat.toFixed(5)}, ${h.lon.toFixed(5)}</div>
+                <div style="margin-top: 8px; border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; gap: 8px;">
+                  <a href="${h.google_maps_url}" target="_blank" style="color: #2563eb; font-weight: 600; text-decoration: none;">Google Maps ↗</a>
+                </div>
+              </div>
+            `;
+            marker.bindPopup(popupContent);
+          }
+
+          // List item
+          const item = document.createElement('div');
+          item.style = 'background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 12px;';
+          item.innerHTML = `
+            <div>
+              <div style="font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                <span style="display: inline-block; width: 7px; height: 7px; border-radius: 50%; background: ${pinColor};"></span>
+                <span>${h.class_name}</span>
+                <span style="font-size: 10px; background: #ffffff; border: 1px solid var(--border); padding: 1px 5px; border-radius: 4px;">${h.status} (${h.sightings}x)</span>
+              </div>
+              <div style="color: var(--text-muted); font-size: 11px; margin-top: 2px;">
+                ${h.lat.toFixed(5)}°N, ${h.lon.toFixed(5)}°E · Z: ${h.nearest_z_m}m · ${Math.round(h.confidence * 100)}% conf
+              </div>
+            </div>
+            <a href="${h.google_maps_url}" target="_blank" class="btn" style="font-size: 11px; padding: 4px 8px; text-decoration: none;">
+              Google Maps
+            </a>
+          `;
+          listContainer.appendChild(item);
+        });
+
+        countSummary.textContent = `${bumps} speed bumps · ${holes} potholes`;
+        verifiedPill.textContent = `${verified} Verified`;
+
+        if (hazards.length > 0 && leafletMap) {
+          const latLngs = hazards.map(h => [h.lat, h.lon]);
+          if (currentGps.lat) latLngs.push([currentGps.lat, currentGps.lon]);
+          leafletMap.fitBounds(latLngs, { padding: [40, 40], maxZoom: 17 });
+        }
+      } catch (e) {
+        console.error('Error fetching hazard map:', e);
+      }
+    }
+
+    async function clearHazardMap() {
+      if (confirm('Clear all recorded hazards from map?')) {
+        await fetch('/api/hazards/clear', { method: 'DELETE' });
+        fetchHazardMap();
+      }
+    }
+
     // Initial canvas setup
     window.addEventListener('DOMContentLoaded', () => {
       loadBenchmarkClips();
+      initGpsTracking();
       canvas.width = 640;
       canvas.height = 400;
       ctx.fillStyle = '#0f172a';
