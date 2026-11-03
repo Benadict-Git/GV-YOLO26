@@ -68,5 +68,33 @@
     "nearest_z_m": 3.5,
     "ego_speed_kmh": 60.0,
     "google_maps_url": "https://www.google.com/maps/search/?api=1&query=11.678156,78.125331"
+  },
+  {
+    "id": "h_5107455_6",
+    "class_name": "Speed Bump",
+    "lat": 12.971649,
+    "lon": 77.594597,
+    "confidence": 0.891,
+    "sightings": 1556,
+    "status": "VERIFIED",
+    "first_seen": "2026-11-01T09:25:07Z",
+    "last_seen": "2026-11-03T05:02:02Z",
+    "nearest_z_m": 2.2,
+    "ego_speed_kmh": 60.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.971649,77.594597"
+  },
+  {
+    "id": "h_5115669_7",
+    "class_name": "Pothole",
+    "lat": 12.971654,
+    "lon": 77.594614,
+    "confidence": 0.925,
+    "sightings": 279,
+    "status": "VERIFIED",
+    "first_seen": "2026-11-01T09:25:15Z",
+    "last_seen": "2026-11-03T05:01:59Z",
+    "nearest_z_m": 2.3,
+    "ego_speed_kmh": 60.0,
+    "google_maps_url": "https://www.google.com/maps/search/?api=1&query=12.971654,77.594614"
   }
 ]

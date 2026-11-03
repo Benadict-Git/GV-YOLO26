@@ -13,7 +13,7 @@ kaggle_jobs
 
 # Datasets and large raw media
 datasets/
-video/
+
 results/
 *.tar.gz
 *.zip
@@ -61,3 +61,5 @@ crop_sig_user.png
 # Local SSL certificates and private keys
 *.pem
 demo_app/ssl/
+video_bak/
+
